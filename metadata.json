@@ -1,0 +1,8 @@
+{
+  "name": "FlavorDish - AI-Powered Food Delivery",
+  "description": "A modern food delivery platform featuring AI-driven menu recommendations, smart search, and a seamless ordering experience.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}
