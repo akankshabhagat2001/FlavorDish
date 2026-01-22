@@ -32,6 +32,11 @@ const RestaurantCard = ({ restaurant, onClick }) => (
       <div className="position-absolute bottom-3 start-3 bg-white/90 backdrop-blur px-2 py-1 rounded-1 fw-bold text-uppercase" style={{fontSize: '10px'}}>
         {restaurant.deliveryTime}
       </div>
+      {restaurant.dietary && restaurant.dietary.length > 0 && (
+        <div className="position-absolute top-3 start-3 d-flex flex-wrap gap-1">
+           {restaurant.dietary.includes('Vegetarian') && <span className="bg-success text-white px-2 py-0.5 rounded-1 fw-black text-uppercase" style={{fontSize: '8px'}}>VEG</span>}
+        </div>
+      )}
     </div>
     <div className="card-body">
       <div className="d-flex justify-content-between align-items-start mb-1">
@@ -173,6 +178,7 @@ const App = () => {
   const [userCoords, setUserCoords] = useState(null);
   const [activeTrackingId, setActiveTrackingId] = useState(null);
   const [sortCriteria, setSortCriteria] = useState('default'); // 'default', 'rating', 'delivery'
+  const [dietaryFilters, setDietaryFilters] = useState([]); // 'Vegetarian', 'Vegan', 'Gluten-Free'
   const [manualDeliveryFee, setManualDeliveryFee] = useState(40);
   const [specialInstructions, setSpecialInstructions] = useState('');
 
@@ -255,8 +261,23 @@ const App = () => {
     setIsEnhancing(false);
   };
 
+  const toggleDietaryFilter = (filter) => {
+    setDietaryFilters(prev => 
+      prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter]
+    );
+  };
+
   const sortedRestaurants = useMemo(() => {
     let list = [...restaurants];
+    
+    // Filter by Dietary Preferences (OR logic - if any selected match)
+    if (dietaryFilters.length > 0) {
+      list = list.filter(res => 
+        res.dietary && dietaryFilters.some(f => res.dietary.includes(f))
+      );
+    }
+
+    // Sort
     if (sortCriteria === 'rating') {
       list.sort((a, b) => b.rating - a.rating);
     } else if (sortCriteria === 'delivery') {
@@ -267,7 +288,7 @@ const App = () => {
       });
     }
     return list;
-  }, [restaurants, sortCriteria]);
+  }, [restaurants, sortCriteria, dietaryFilters]);
 
   const cartTotal = useMemo(() => cart.reduce((acc, i) => acc + (i.price * i.quantity), 0), [cart]);
 
@@ -424,35 +445,61 @@ const App = () => {
               </section>
 
               <section className="mb-5">
-                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-4">
-                  <h2 className="fw-black h3 m-0">Curated for Ahmedabad</h2>
-                  <div className="d-flex flex-wrap gap-2">
-                    <button 
-                      onClick={() => setSortCriteria('default')} 
-                      className={`btn btn-sm rounded-pill px-4 fw-bold small text-uppercase transition-all ${sortCriteria === 'default' ? 'btn-danger shadow-lg' : 'btn-outline-secondary'}`}
-                    >
-                      All
-                    </button>
-                    <button 
-                      onClick={() => setSortCriteria('delivery')} 
-                      className={`btn btn-sm rounded-pill px-4 fw-bold small text-uppercase transition-all ${sortCriteria === 'delivery' ? 'btn-danger shadow-lg' : 'btn-outline-secondary'}`}
-                    >
-                      <ClockIcon className="w-4 h-4 d-inline me-1" /> Fastest Delivery
-                    </button>
-                    <button 
-                      onClick={() => setSortCriteria('rating')} 
-                      className={`btn btn-sm rounded-pill px-4 fw-bold small text-uppercase transition-all ${sortCriteria === 'rating' ? 'btn-danger shadow-lg' : 'btn-outline-secondary'}`}
-                    >
-                      <StarIcon className="w-4 h-4 d-inline me-1" /> Highest Rating
-                    </button>
+                <div className="d-flex flex-column gap-4 mb-4">
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4">
+                    <h2 className="fw-black h3 m-0">Curated for Ahmedabad</h2>
+                    <div className="d-flex flex-wrap gap-2">
+                      <button 
+                        onClick={() => setSortCriteria('default')} 
+                        className={`btn btn-sm rounded-pill px-4 fw-bold small text-uppercase transition-all ${sortCriteria === 'default' ? 'btn-danger shadow-lg' : 'btn-outline-secondary'}`}
+                      >
+                        All
+                      </button>
+                      <button 
+                        onClick={() => setSortCriteria('delivery')} 
+                        className={`btn btn-sm rounded-pill px-4 fw-bold small text-uppercase transition-all ${sortCriteria === 'delivery' ? 'btn-danger shadow-lg' : 'btn-outline-secondary'}`}
+                      >
+                        <ClockIcon className="w-4 h-4 d-inline me-1" /> Fastest Delivery
+                      </button>
+                      <button 
+                        onClick={() => setSortCriteria('rating')} 
+                        className={`btn btn-sm rounded-pill px-4 fw-bold small text-uppercase transition-all ${sortCriteria === 'rating' ? 'btn-danger shadow-lg' : 'btn-outline-secondary'}`}
+                      >
+                        <StarIcon className="w-4 h-4 d-inline me-1" /> Highest Rating
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="d-flex flex-wrap gap-2 border-top pt-3">
+                     <span className="text-muted fw-bold small text-uppercase tracking-widest align-self-center me-2">Dietary:</span>
+                     {['Vegetarian', 'Vegan', 'Gluten-Free'].map(filter => (
+                        <button 
+                          key={filter}
+                          onClick={() => toggleDietaryFilter(filter)}
+                          className={`btn btn-sm rounded-pill px-3 fw-bold small transition-all border-2 ${dietaryFilters.includes(filter) ? 'bg-success border-success text-white shadow-lg' : 'border-success/20 text-success hover:bg-success/5'}`}
+                        >
+                          {filter === 'Vegetarian' && '🟢 '}
+                          {filter === 'Vegan' && '🌱 '}
+                          {filter === 'Gluten-Free' && '🌾 '}
+                          {filter}
+                        </button>
+                     ))}
                   </div>
                 </div>
+                
                 <div className="row g-4">
                   {sortedRestaurants.map(res => (
                     <div key={res.id} className="col-12 col-md-6 col-lg-4 col-xl-3">
                       <RestaurantCard restaurant={res} onClick={() => { setSelectedRestaurant(res); setCurrentView('restaurant'); }} />
                     </div>
                   ))}
+                  {sortedRestaurants.length === 0 && (
+                    <div className="col-12 text-center py-12">
+                      <div className="display-4 mb-4">🍽️</div>
+                      <h3 className="fw-black text-muted">No restaurants match your filters.</h3>
+                      <button onClick={() => {setDietaryFilters([]); setSortCriteria('default');}} className="btn btn-link text-danger fw-bold">Clear all filters</button>
+                    </div>
+                  )}
                 </div>
               </section>
             </div>

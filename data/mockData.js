@@ -7,6 +7,7 @@ export const RESTAURANTS = [
     rating: 4.8,
     deliveryTime: '30-45 min',
     deliveryFee: 40,
+    dietary: ['Gluten-Free'],
     image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?q=80&w=1200&auto=format&fit=crop',
     menu: [
       { id: 'm1', name: 'Chicken Dum Biryani', description: 'Authentic Hyderabadi spice-infused basmati rice with tender chicken.', price: 320, category: 'Main', image: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?q=80&w=600&auto=format&fit=crop', rating: 4.9, prepTime: '25 min' },
@@ -22,6 +23,7 @@ export const RESTAURANTS = [
     rating: 4.6,
     deliveryTime: '20-35 min',
     deliveryFee: 30,
+    dietary: ['Vegetarian', 'Vegan', 'Gluten-Free'],
     image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?q=80&w=1200&auto=format&fit=crop',
     menu: [
       { id: 'm4', name: 'Ghee Podi Roast Dosa', description: 'Crispy dosa with aromatic podi powder and pure ghee.', price: 180, category: 'Main', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=600&auto=format&fit=crop', rating: 4.8, prepTime: '12 min' },
@@ -37,6 +39,7 @@ export const RESTAURANTS = [
     rating: 4.7,
     deliveryTime: '40-55 min',
     deliveryFee: 50,
+    dietary: ['Vegetarian'],
     image: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?q=80&w=1200&auto=format&fit=crop',
     menu: [
       { id: 'm15', name: 'Creamy Butter Chicken', description: 'The ultimate North Indian indulgence. Chicken cooked in a rich, buttery tomato sauce.', price: 380, category: 'Main', image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?q=80&w=600&auto=format&fit=crop', rating: 4.9, prepTime: '30 min' },
@@ -52,6 +55,7 @@ export const RESTAURANTS = [
     rating: 4.5,
     deliveryTime: '15-25 min',
     deliveryFee: 20,
+    dietary: ['Vegetarian', 'Vegan'],
     image: 'https://images.unsplash.com/photo-1626132646529-5003b508308d?q=80&w=1200&auto=format&fit=crop',
     menu: [
       { id: 'm10', name: 'Special Pav Bhaji', description: 'Spicy mashed vegetable curry served with buttery soft buns.', price: 160, category: 'Street Food', image: 'https://images.unsplash.com/photo-1606491956689-2ea8c5383c84?q=80&w=600&auto=format&fit=crop', rating: 4.7, prepTime: '10 min' },
