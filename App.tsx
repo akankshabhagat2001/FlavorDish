@@ -1,6 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { StarIcon, CartIcon, SparklesIcon } from './components/Icons';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, BarChart, Bar, Cell, Legend 
+} from 'recharts';
+import { StarIcon, CartIcon, SparklesIcon, ClockIcon, TagIcon, RefreshIcon } from './components/Icons';
 import { db } from './services/databaseService';
 import { enhanceMenuDescriptions } from './services/geminiService';
 
@@ -35,6 +39,9 @@ const App = () => {
   const [selectedRes, setSelectedRes] = useState<any>(null);
   const [partnerInvites, setPartnerInvites] = useState<any[]>([]);
   
+  // Analytics timeframe
+  const [analyticsTimeframe, setAnalyticsTimeframe] = useState<'week' | 'month' | 'year'>('week');
+
   // AI-Enhanced Descriptions state
   const [enhancedDescriptions, setEnhancedDescriptions] = useState<Record<string, string>>({});
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -66,7 +73,25 @@ const App = () => {
         }).catch(() => setIsEnhancing(false));
       }
     }
-  }, [selectedRes]);
+  }, [selectedRes, enhancedDescriptions]);
+
+  // Generate Mock Analytics Data
+  const chartData = useMemo(() => {
+    const data: any[] = [];
+    const points = analyticsTimeframe === 'week' ? 7 : analyticsTimeframe === 'month' ? 30 : 12;
+    const labels = analyticsTimeframe === 'week' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : 
+                 analyticsTimeframe === 'month' ? Array.from({length: 30}, (_, i) => `${i+1}`) : 
+                 ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    for (let i = 0; i < points; i++) {
+      data.push({
+        name: labels[i],
+        revenue: Math.floor(Math.random() * 5000) + 1000,
+        orders: Math.floor(Math.random() * 50) + 5
+      });
+    }
+    return data;
+  }, [analyticsTimeframe]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +127,13 @@ const App = () => {
     }
   };
 
+  const sendInvite = async () => {
+    if (!authForm.email || !authForm.resName) return alert('Enter email and restaurant name');
+    await db.sendPartnerInvite(authForm.email, authForm.resName);
+    setPartnerInvites(await db.getPartnerInvites());
+    alert('Invitation sent successfully.');
+  };
+
   const addToCart = (item: any, restaurant: any) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id);
@@ -109,6 +141,137 @@ const App = () => {
       return [...prev, { ...item, quantity: 1, restaurantId: restaurant.id, restaurantName: restaurant.name }];
     });
   };
+
+  const AdminPanel = () => (
+    <div className="container py-5 fade-in">
+      <div className="d-flex justify-content-between align-items-center mb-5">
+         <div>
+            <h1 className="fw-black h2 m-0 tracking-tighter">Business <span className="text-danger">Console</span></h1>
+            <p className="text-secondary small m-0 uppercase fw-bold tracking-widest mt-1">Global Partner Overview</p>
+         </div>
+         <div className="d-flex gap-3">
+            <div className="bg-light p-1 rounded-3 d-flex">
+               {(['week', 'month', 'year'] as const).map(tf => (
+                 <button 
+                  key={tf}
+                  onClick={() => setAnalyticsTimeframe(tf)}
+                  className={`btn btn-sm px-3 rounded-2 fw-bold text-uppercase ${analyticsTimeframe === tf ? 'btn-white shadow-sm' : 'text-muted border-0 bg-transparent'}`}
+                  style={{ fontSize: '10px' }}
+                 >
+                   {tf}
+                 </button>
+               ))}
+            </div>
+            <button onClick={() => { db.logout(); setCurrentUser(null); setCurrentView('home'); }} className="btn btn-z-outline btn-sm px-4">Log Out</button>
+         </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="row g-4 mb-5">
+         {[
+           { label: 'Total Revenue', value: '₹4.2L', trend: '+12.5%', icon: <TagIcon className="text-danger"/> },
+           { label: 'Total Orders', value: '1,284', trend: '+8.2%', icon: <CartIcon className="text-primary"/> },
+           { label: 'Avg. Rating', value: '4.8★', trend: '+0.1', icon: <StarIcon className="text-warning"/> },
+           { label: 'Active Fleet', value: '34', trend: 'Live', icon: <BikeIcon className="text-success"/> },
+         ].map((kpi, i) => (
+           <div key={i} className="col-md-3">
+              <div className="z-card p-4 border-0 shadow-sm">
+                 <div className="d-flex justify-content-between align-items-start mb-2">
+                    <div className="p-2 rounded-3 bg-light">{kpi.icon}</div>
+                    <span className="x-small fw-bold text-success">{kpi.trend}</span>
+                 </div>
+                 <h2 className="fw-black m-0 mt-1">{kpi.value}</h2>
+                 <p className="small text-muted fw-bold uppercase tracking-widest m-0">{kpi.label}</p>
+              </div>
+           </div>
+         ))}
+      </div>
+
+      {/* Charts Section */}
+      <div className="row g-4 mb-5">
+         <div className="col-md-8">
+            <div className="z-card p-4 h-100 shadow-sm border-0">
+               <div className="d-flex justify-content-between align-items-center mb-4">
+                  <h5 className="fw-bold m-0">Revenue Analytics</h5>
+                  <span className="small text-muted fw-bold">Live Data Feed</span>
+               </div>
+               <div style={{ width: '100%', height: 350 }}>
+                  <ResponsiveContainer>
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#E23744" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#E23744" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9C9C9C', fontSize: 11}} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#9C9C9C', fontSize: 11}} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: '12px' }}
+                        itemStyle={{ fontWeight: 'bold' }}
+                      />
+                      <Area type="monotone" dataKey="revenue" stroke="#E23744" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+         </div>
+         <div className="col-md-4">
+            <div className="z-card p-4 h-100 shadow-sm border-0">
+               <div className="d-flex justify-content-between align-items-center mb-4">
+                  <h5 className="fw-bold m-0">Order Volume</h5>
+                  <span className="small text-muted fw-bold">Daily Count</span>
+               </div>
+               <div style={{ width: '100%', height: 350 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9C9C9C', fontSize: 11}} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fill: '#9C9C9C', fontSize: 11}} />
+                      <Tooltip cursor={{fill: '#f8f8f8'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }} />
+                      <Bar dataKey="orders" fill="#1C1C1C" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <div className="row g-4">
+         <div className="col-md-6">
+            <div className="z-card p-5 h-100 shadow-sm border-0">
+               <h4 className="fw-bold mb-4">Partner Onboarding</h4>
+               <p className="text-muted small mb-4">Send a specialized onboarding link to new culinary partners.</p>
+               <div className="d-flex flex-column gap-3">
+                  <input type="text" className="form-control z-input border" placeholder="Restaurant Name" value={authForm.resName} onChange={e => setAuthForm({...authForm, resName: e.target.value})} />
+                  <input type="email" className="form-control z-input border" placeholder="Partner Email" value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} />
+                  <button onClick={sendInvite} className="btn btn-z-primary py-3">Dispatch Invitation</button>
+               </div>
+            </div>
+         </div>
+         <div className="col-md-6">
+            <div className="z-card p-5 h-100 shadow-sm border-0">
+               <h4 className="fw-bold mb-4">Recent Invitations</h4>
+               <div className="table-responsive">
+                  <table className="table table-sm">
+                     <thead><tr className="small text-muted uppercase tracking-widest"><th className="border-0">Partner</th><th className="border-0">Email</th><th className="border-0">Status</th></tr></thead>
+                     <tbody>
+                        {partnerInvites.map(inv => (
+                          <tr key={inv.id} className="small">
+                             <td className="py-3 fw-bold">{inv.restaurantName}</td>
+                             <td className="py-3 text-secondary">{inv.email}</td>
+                             <td className="py-3"><span className="badge bg-success-subtle text-success px-2 py-1 rounded-1 fw-bold">{inv.status}</span></td>
+                          </tr>
+                        ))}
+                     </tbody>
+                  </table>
+               </div>
+            </div>
+         </div>
+      </div>
+    </div>
+  );
 
   const HomeView = () => (
     <div className="fade-in">
@@ -280,10 +443,12 @@ const App = () => {
              {currentUser ? (
                <div className="d-flex align-items-center gap-3">
                  <span className="small fw-bold text-muted">Hi, {currentUser.name}</span>
-                 <div className="position-relative cursor-pointer" onClick={() => setCurrentView('checkout')}>
-                    <CartIcon className="text-muted" />
-                    {cart.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '9px' }}>{cart.length}</span>}
-                 </div>
+                 {currentUser.role !== 'admin' && (
+                   <div className="position-relative cursor-pointer" onClick={() => setCurrentView('checkout')}>
+                      <CartIcon className="text-muted" />
+                      {cart.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '9px' }}>{cart.length}</span>}
+                   </div>
+                 )}
                  <button onClick={() => { db.logout(); setCurrentUser(null); setCurrentView('home'); }} className="btn text-muted small fw-bold">Logout</button>
                </div>
              ) : (
@@ -297,6 +462,7 @@ const App = () => {
         {currentView === 'home' && <HomeView />}
         {currentView === 'login' && <LoginPortal />}
         {currentView === 'restaurant' && <RestaurantView />}
+        {currentView === 'admin-dashboard' && <AdminPanel />}
         {currentView === 'checkout' && (
           <div className="container py-5 fade-in">
              <div className="z-card bg-white p-5 mx-auto" style={{ maxWidth: '600px' }}>
