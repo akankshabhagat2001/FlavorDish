@@ -4,7 +4,16 @@ import { StarIcon, CartIcon, ClockIcon, SparklesIcon, TagIcon, RefreshIcon, Hear
 import { enhanceMenuDescriptions, getNearbyFoodDiscovery, connectToLiveSupport } from './services/geminiService.js';
 import { db } from './services/databaseService.js';
 
-// --- Additional Icons ---
+// --- Additional Icons for Portal ---
+const ChartIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+);
+const UsersIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+);
+const PackageIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+);
 const HeadsetIcon = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-3.536 4.978 4.978 0 011.414-3.536m0 0l2.829 2.829m-2.829 4.243L3 21m6.707-6.707a8.001 8.001 0 0111.314 0z" /></svg>
 );
@@ -102,7 +111,7 @@ const LiveSupportPanel = ({ isOpen, onClose, isDarkMode }) => {
               <span className="small opacity-75 fw-bold uppercase" style={{ fontSize: '10px' }}>{status === 'active' ? '● Live with Gemini' : 'Connecting...'}</span>
             </div>
           </div>
-          <button onClick={onClose} className="btn text-white p-0 border-0 shadow-none"><XIcon /></button>
+          <button className="btn text-white p-0 border-0 shadow-none" onClick={onClose}><XIcon /></button>
         </div>
 
         <div ref={scrollRef} className="flex-grow-1 p-4 overflow-auto no-scrollbar d-flex flex-column gap-3">
@@ -139,7 +148,7 @@ const LiveSupportPanel = ({ isOpen, onClose, isDarkMode }) => {
   );
 };
 
-const InteractiveMap = ({ center, isDarkMode, markers = [], polyline = [] }) => {
+const InteractiveMap = ({ center, isDarkMode, markers = [], polyline = [], height = '450px' }) => {
   const mapRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -183,13 +192,13 @@ const InteractiveMap = ({ center, isDarkMode, markers = [], polyline = [] }) => 
     });
 
     if (polyline.length > 0) {
-      L.polyline(polyline, { color: '#dc3545', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(map);
+      L.polyline(polyline, { color: isDarkMode ? '#ff4d4d' : '#dc3545', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(map);
     }
 
     if (center) map.panTo(center, { animate: true, duration: 1 });
-  }, [markers, polyline, center]);
+  }, [markers, polyline, center, isDarkMode]);
 
-  return <div ref={containerRef} className={`w-100 h-100 rounded-5 overflow-hidden z-shadow border ${isDarkMode ? 'border-gray-800' : 'border-white'}`} style={{ minHeight: '450px' }} />;
+  return <div ref={containerRef} className={`w-100 h-100 rounded-5 overflow-hidden z-shadow border ${isDarkMode ? 'border-gray-800' : 'border-white'}`} style={{ minHeight: height }} />;
 };
 
 const StatusProgress = ({ currentStatus, isDarkMode }) => {
@@ -206,7 +215,7 @@ const StatusProgress = ({ currentStatus, isDarkMode }) => {
       <div className="w-100 bg-gray-800 rounded-pill overflow-hidden" style={{height: '6px'}}>
         <div className="h-100 bg-danger transition-all duration-1000" style={{width: `${(currentIdx / (ORDER_STATUS_STEPS.length - 1)) * 100}%`}} />
       </div>
-      <p className="small fw-black text-danger text-uppercase tracking-tighter mt-2 mb-0">{STATUS_LABELS[step]}</p>
+      <p className="small fw-black text-danger text-uppercase tracking-tighter mt-2 mb-0">{STATUS_LABELS[currentStatus]}</p>
     </div>
   );
 };
@@ -285,7 +294,7 @@ const App = () => {
   // Courier Simulation Drift
   useEffect(() => {
     let interval;
-    if (activeTrackingId) {
+    if (activeTrackingId || orders.some(o => ['preparing', 'picked_up', 'delivering', 'near_you'].includes(o.status))) {
       interval = setInterval(() => {
         setCourierDrift(prev => (prev + 0.0001) % 0.005);
       }, 3000);
@@ -293,7 +302,7 @@ const App = () => {
       setCourierDrift(0);
     }
     return () => clearInterval(interval);
-  }, [activeTrackingId]);
+  }, [activeTrackingId, orders]);
 
   useEffect(() => {
     if (currentView === 'restaurant' && selectedRestaurant) {
@@ -346,34 +355,19 @@ const App = () => {
     db.saveCart(updated);
   };
 
-  const updateGlobalStatus = async (id, status) => {
-    const updated = await db.updateOrderStatus(id, status);
-    setOrders(updated);
-  };
-
-  const activeOrder = useMemo(() => orders.find(o => o.id === activeTrackingId), [orders, activeTrackingId]);
-  
-  const trackingData = useMemo(() => {
-    if (!activeOrder) return null;
-    // Mock restaurant slightly north-east
+  const getTrackingData = (order) => {
+    if (!order) return null;
     const restCoords = [userCoords.latitude + 0.012, userCoords.longitude + 0.008];
     const homeCoords = [userCoords.latitude, userCoords.longitude];
-    
-    const statusIdx = ORDER_STATUS_STEPS.indexOf(activeOrder.status);
+    const statusIdx = ORDER_STATUS_STEPS.indexOf(order.status);
     let progress = statusIdx / (ORDER_STATUS_STEPS.length - 1);
-    
-    // Smooth progress based on current drift if delivering
-    if (activeOrder.status === 'delivering') {
-      progress += (0.1 * courierDrift / 0.005);
-    }
-
+    if (order.status === 'delivering') progress += (0.1 * courierDrift / 0.005);
     const courierPos = [
       restCoords[0] + (homeCoords[0] - restCoords[0]) * progress,
       restCoords[1] + (homeCoords[1] - restCoords[1]) * progress
     ];
-
     return { restCoords, homeCoords, courierPos, progress };
-  }, [activeOrder, userCoords, courierDrift]);
+  };
 
   const filteredRestaurants = useMemo(() => {
     if (!headerSearchTerm.trim()) return [];
@@ -382,6 +376,140 @@ const App = () => {
       res.cuisine.toLowerCase().includes(headerSearchTerm.toLowerCase())
     ).slice(0, 5);
   }, [restaurants, headerSearchTerm]);
+
+  // --- Partner Portal UI Section ---
+  const PartnerDashboard = () => {
+    const revenue = useMemo(() => orders.reduce((acc, o) => acc + o.items.reduce((sum, i) => sum + (i.price * i.quantity), 40), 0), [orders]);
+    const liveOrdersCount = orders.filter(o => o.status !== 'delivered').length;
+
+    return (
+      <div className="animate-fadeIn">
+         {/* Stats Grid */}
+         <div className="row g-4 mb-5">
+            {[
+              { label: 'Live Orders', value: liveOrdersCount, icon: <PackageIcon className="text-danger" />, trend: '+12% vs last hour' },
+              { label: 'Net Revenue', value: `₹${revenue}`, icon: <ChartIcon className="text-success" />, trend: '+₹4.2k today' },
+              { label: 'Avg. Rating', value: '4.8', icon: <StarIcon className="text-warning" />, trend: 'Based on 1.2k reviews' },
+              { label: 'Repeat Customers', value: '62%', icon: <UsersIcon className="text-primary" />, trend: '+4% this week' }
+            ].map((stat, i) => (
+              <div key={i} className="col-12 col-md-6 col-lg-3">
+                 <div className={`card border-0 z-shadow rounded-5 p-4 ${isDarkMode ? 'bg-[#1a1a1a] text-white border border-gray-800' : 'bg-white'}`}>
+                    <div className="d-flex justify-content-between mb-3">
+                       <div className="p-3 rounded-4 bg-gray-50/5 border border-gray-800">
+                          {stat.icon}
+                       </div>
+                    </div>
+                    <p className="small text-muted fw-bold uppercase tracking-widest mb-1">{stat.label}</p>
+                    <h2 className="fw-black mb-1">{stat.value}</h2>
+                    <span className="small text-success fw-bold">{stat.trend}</span>
+                 </div>
+              </div>
+            ))}
+         </div>
+
+         <div className="row g-4">
+            {/* Live Orders Column */}
+            <div className="col-lg-8">
+               <div className={`card border-0 z-shadow rounded-5 p-4 mb-4 ${isDarkMode ? 'bg-[#1a1a1a] text-white border border-gray-800' : 'bg-white'}`}>
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                     <h4 className="fw-black m-0">Live Order Management</h4>
+                     <div className="badge bg-danger/10 text-danger px-3 py-2 rounded-pill fw-bold">REAL-TIME MONITOR</div>
+                  </div>
+                  <div className="table-responsive">
+                     <table className="table table-borderless align-middle mb-0">
+                        <thead>
+                           <tr className="text-muted small uppercase tracking-widest border-bottom border-gray-800">
+                              <th className="pb-3">Order ID</th>
+                              <th className="pb-3">Customer Items</th>
+                              <th className="pb-3">Status</th>
+                              <th className="pb-3">Action</th>
+                           </tr>
+                        </thead>
+                        <tbody>
+                           {orders.filter(o => o.status !== 'delivered').map(o => (
+                             <tr key={o.id} className="border-bottom border-gray-800/50">
+                                <td className="py-4">
+                                   <span className="fw-black text-danger">#{o.id}</span>
+                                   <p className="m-0 small text-muted">{new Date(o.timestamp).toLocaleTimeString()}</p>
+                                </td>
+                                <td>
+                                   <div className="d-flex flex-column gap-1">
+                                      {o.items.map((it, idx) => (
+                                        <span key={idx} className="small text-white opacity-80">{it.quantity}x {it.name}</span>
+                                      ))}
+                                   </div>
+                                </td>
+                                <td>
+                                   <span className={`badge rounded-pill px-3 py-2 fw-bold ${o.status === 'delivering' ? 'bg-info/20 text-info' : 'bg-warning/20 text-warning'}`}>
+                                      {STATUS_LABELS[o.status]}
+                                   </span>
+                                </td>
+                                <td>
+                                   <div className="dropdown">
+                                      <button className="btn btn-outline-danger btn-sm rounded-pill px-3 dropdown-toggle fw-bold" data-bs-toggle="dropdown">UPDATE</button>
+                                      <ul className={`dropdown-menu ${isDarkMode ? 'dropdown-menu-dark' : ''}`}>
+                                         {ORDER_STATUS_STEPS.map(step => (
+                                           <li key={step}><button onClick={() => updateGlobalStatus(o.id, step)} className="dropdown-item small fw-bold">{STATUS_LABELS[step]}</button></li>
+                                         ))}
+                                      </ul>
+                                   </div>
+                                </td>
+                             </tr>
+                           ))}
+                           {orders.filter(o => o.status !== 'delivered').length === 0 && (
+                             <tr>
+                                <td colSpan="4" className="text-center py-5 text-muted fw-bold italic opacity-50">No incoming orders yet. Your kitchen is at rest.</td>
+                             </tr>
+                           )}
+                        </tbody>
+                     </table>
+                  </div>
+               </div>
+            </div>
+
+            {/* AI Insights Sidebar */}
+            <div className="col-lg-4">
+               <div className={`card border-0 z-shadow rounded-5 p-4 mb-4 ${isDarkMode ? 'bg-[#1a1a1a] text-white border border-gray-800' : 'bg-white'}`}>
+                  <h4 className="fw-black mb-4 d-flex align-items-center gap-2">
+                     <SparklesIcon className="text-danger" /> AI Partner Insights
+                  </h4>
+                  
+                  <div className="d-flex flex-column gap-4">
+                     <div className="p-3 rounded-4 bg-danger/5 border border-danger/20">
+                        <p className="small fw-black text-danger uppercase tracking-widest mb-2">Demand Forecast</p>
+                        <p className="small m-0 opacity-80">Expect a <b>24% surge</b> in Biryani orders between 8 PM - 10 PM. Consider prepping extra gravy bases.</p>
+                     </div>
+                     <div className="p-3 rounded-4 bg-primary/5 border border-primary/20">
+                        <p className="small fw-black text-primary uppercase tracking-widest mb-2">Flavor Trends</p>
+                        <p className="small m-0 opacity-80">Amdavadis are loving <b>"Smoky Tandoori"</b> this week. Adding a smoky variant to your starters could boost conversion.</p>
+                     </div>
+                     <div className="p-3 rounded-4 bg-success/5 border border-success/20">
+                        <p className="small fw-black text-success uppercase tracking-widest mb-2">Pricing Guard</p>
+                        <p className="small m-0 opacity-80">Your "Mutton Seekh" is priced 10% lower than competitors. An increase of ₹20 might optimize profit without affecting volume.</p>
+                     </div>
+                  </div>
+
+                  <button className="btn btn-danger w-100 py-3 rounded-4 fw-black mt-5 shadow-lg shadow-red-500/20">GENERATE NEW STRATEGY</button>
+               </div>
+
+               <div className={`card border-0 z-shadow rounded-5 p-4 ${isDarkMode ? 'bg-[#1a1a1a] text-white border border-gray-800' : 'bg-white'}`}>
+                  <h6 className="fw-black mb-3">Live Ahmedabad Market</h6>
+                  <div className="d-flex flex-column gap-2">
+                     <div className="d-flex justify-content-between align-items-center small">
+                        <span className="text-muted">Trending:</span>
+                        <span className="fw-bold">Cheese Butter Masala</span>
+                     </div>
+                     <div className="d-flex justify-content-between align-items-center small">
+                        <span className="text-muted">High Traffic Area:</span>
+                        <span className="fw-bold">Sindhu Bhavan Road</span>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+    );
+  };
 
   if (!currentUser) return (
     <div className={`min-h-screen d-flex align-items-center justify-center p-4 ${isDarkMode ? 'bg-[#0f0f0f]' : 'bg-[#f8f9fa]'}`}>
@@ -403,6 +531,13 @@ const App = () => {
           {authError && <p className="text-danger small fw-bold mt-1">{authError}</p>}
           <button type="submit" disabled={isLoggingIn} className="btn btn-danger py-4 rounded-4 fw-black tracking-tighter text-lg shadow-lg mt-3">SIGN IN</button>
         </form>
+        <div className="mt-4 pt-3 border-top border-gray-800/20">
+           <p className="small text-muted mb-2 fw-bold">Demo Logins:</p>
+           <div className="d-flex justify-content-center gap-3">
+              <span className="badge bg-gray-500/20 text-gray-400">User: user / pass</span>
+              <span className="badge bg-danger/20 text-danger">Admin: admin / admin</span>
+           </div>
+        </div>
         <button onClick={() => setIsDarkMode(!isDarkMode)} className="btn btn-link mt-4 text-gray-500 text-decoration-none small fw-bold uppercase">Toggle Mode</button>
       </div>
     </div>
@@ -412,7 +547,7 @@ const App = () => {
     <div className={`min-h-screen ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
       <nav className={`fixed-top w-100 py-2 ${isDarkMode ? 'bg-[#0f0f0f]/95 backdrop-blur shadow-xl' : 'bg-[#0f0f0f]'}`} style={{ zIndex: 1100 }}>
         <div className="container d-flex justify-content-between align-items-center gap-3 md:gap-5">
-          <div onClick={() => setCurrentView('home')} className="cursor-pointer d-flex align-items-center gap-2 flex-shrink-0">
+          <div onClick={() => setCurrentView(currentUser.role === 'admin' ? 'admin-dashboard' : 'home')} className="cursor-pointer d-flex align-items-center gap-2 flex-shrink-0">
             <SparklesIcon className="text-danger w-6 h-6 md:w-7 h-7" />
             <span className="h4 m-0 fw-black text-white tracking-tighter d-none d-md-block">FlavorDish</span>
           </div>
@@ -423,7 +558,7 @@ const App = () => {
                 <input 
                   type="text" 
                   className="bg-transparent border-0 text-white shadow-none w-100 small fw-bold outline-none" 
-                  placeholder="Find your favorite taste..."
+                  placeholder={currentUser.role === 'admin' ? "Search partner data..." : "Find your favorite taste..."}
                   value={headerSearchTerm}
                   onChange={(e) => {
                     setHeaderSearchTerm(e.target.value);
@@ -433,7 +568,7 @@ const App = () => {
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 />
              </div>
-             {showSuggestions && filteredRestaurants.length > 0 && (
+             {showSuggestions && filteredRestaurants.length > 0 && currentUser.role !== 'admin' && (
                <div className={`position-absolute top-100 start-0 w-100 mt-2 z-shadow rounded-4 overflow-hidden animate-fadeIn ${isDarkMode ? 'bg-[#1a1a1a] text-white border border-gray-800' : 'bg-white text-dark border border-gray-100'}`} style={{ zIndex: 1200 }}>
                   {filteredRestaurants.map(res => (
                     <div 
@@ -457,17 +592,29 @@ const App = () => {
           </div>
 
           <div className="d-flex align-items-center gap-2 md:gap-4 text-white flex-shrink-0">
-            <button onClick={() => setCurrentView('history')} className={`small fw-black text-uppercase tracking-widest d-none d-md-block ${currentView === 'history' ? 'text-danger' : 'text-gray-400'}`}>MY ORDERS</button>
-            <button onClick={() => { db.logout(); setCurrentUser(null); }} className="small fw-black text-uppercase tracking-widest text-gray-400 hover:text-danger">LOGOUT</button>
-            <div onClick={() => setCurrentView('checkout')} className="position-relative cursor-pointer">
-              <CartIcon className="w-5 h-5 md:w-6 h-6" />
-              {cart.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{fontSize: '9px'}}>{cart.length}</span>}
+            {currentUser.role !== 'admin' && (
+              <>
+                <button onClick={() => setCurrentView('history')} className={`small fw-black text-uppercase tracking-widest d-none d-md-block ${currentView === 'history' ? 'text-danger' : 'text-gray-400'}`}>MY ORDERS</button>
+                <div onClick={() => setCurrentView('checkout')} className="position-relative cursor-pointer">
+                  <CartIcon className="w-5 h-5 md:w-6 h-6" />
+                  {cart.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{fontSize: '9px'}}>{cart.length}</span>}
+                </div>
+              </>
+            )}
+            <div className="d-flex align-items-center gap-2 border-start border-gray-800 ps-4">
+               <div className="text-end d-none d-lg-block">
+                  <p className="m-0 small fw-black text-white">{currentUser.name}</p>
+                  <p className="m-0 x-small text-danger fw-bold uppercase tracking-widest" style={{fontSize: '8px'}}>{currentUser.role}</p>
+               </div>
+               <button onClick={() => { db.logout(); setCurrentUser(null); }} className="btn btn-danger btn-sm rounded-circle p-2"><XIcon className="w-4 h-4"/></button>
             </div>
           </div>
         </div>
       </nav>
 
       <div className="pt-28 pb-10 container">
+        {currentView === 'admin-dashboard' && <PartnerDashboard />}
+        
         {currentView === 'home' && (
           <div className="animate-fadeIn">
             <div className="mb-5 position-relative rounded-5 overflow-hidden h-64 md:h-96">
@@ -494,29 +641,74 @@ const App = () => {
                 <button onClick={() => setCurrentView('home')} className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-black">EXPLORE MORE</button>
              </div>
              <div className="row g-4">
-                {orders.map(o => (
-                  <div key={o.id} className="col-12 col-md-6">
-                    <div className={`card border-0 z-shadow rounded-5 p-4 ${isDarkMode ? 'bg-[#1e1e1e] text-white' : 'bg-white'}`}>
-                       <div className="d-flex justify-content-between mb-4">
-                          <div className="flex-grow-1">
-                             <div className="d-flex align-items-center gap-2 mb-1">
-                                <span className="text-danger fw-black small uppercase tracking-widest">#{o.id}</span>
-                                <span className="badge bg-danger/10 text-danger rounded-pill px-2 py-0.5 fw-bold" style={{fontSize: '8px'}}>{STATUS_LABELS[o.status]}</span>
-                             </div>
-                             <h4 className="fw-black m-0">{o.items?.[0]?.restaurantName}</h4>
-                          </div>
-                          <button onClick={() => { setActiveTrackingId(o.id); setCurrentView('tracking'); }} className="btn btn-danger btn-sm rounded-pill px-4 fw-black h-fit shadow-lg shadow-red-500/20">TRACK LIVE</button>
-                       </div>
-                       <div className="d-flex justify-content-between pt-3 border-top border-gray-800 mt-2">
-                          <div className="d-flex align-items-center gap-2">
-                             <ClockIcon className="text-muted" />
-                             <span className="text-muted small">{new Date(o.timestamp).toLocaleDateString()}</span>
-                          </div>
-                          <span className="fw-black text-danger">₹{o.items?.reduce((a, b) => a + (b.price * b.quantity), 40)}</span>
-                       </div>
+                {orders.map(o => {
+                  const tData = ['preparing', 'picked_up', 'delivering', 'near_you'].includes(o.status) ? getTrackingData(o) : null;
+                  return (
+                    <div key={o.id} className="col-12">
+                      <div className="card border-0 z-shadow rounded-5 p-4 mb-3 bg-[#111111] text-white border border-gray-800">
+                         <div className="row g-4">
+                            <div className={tData ? 'col-lg-5' : 'col-12'}>
+                               <div className="d-flex justify-content-between mb-4">
+                                  <div className="flex-grow-1">
+                                     <div className="d-flex align-items-center gap-2 mb-1">
+                                        <span className="text-danger fw-black small uppercase tracking-widest">#{o.id}</span>
+                                        <span className="badge bg-danger/10 text-danger rounded-pill px-2 py-0.5 fw-bold" style={{fontSize: '9px'}}>{STATUS_LABELS[o.status]}</span>
+                                     </div>
+                                     <h4 className="fw-black m-0 text-white">{o.items?.[0]?.restaurantName}</h4>
+                                  </div>
+                                  <div className="text-end">
+                                     <span className="fw-black text-danger d-block">₹{o.items?.reduce((a, b) => a + (b.price * b.quantity), 40)}</span>
+                                     <span className="text-gray-400 small">{new Date(o.timestamp).toLocaleDateString()}</span>
+                                  </div>
+                               </div>
+
+                               <div className="mb-4">
+                                  <h6 className="text-gray-500 small fw-bold uppercase tracking-widest mb-3">Order Items</h6>
+                                  {o.items?.map((item, idx) => (
+                                    <div key={idx} className="d-flex justify-content-between small mb-1 text-gray-300">
+                                       <span>{item.quantity}x {item.name}</span>
+                                       <span>₹{item.price * item.quantity}</span>
+                                    </div>
+                                  ))}
+                               </div>
+
+                               <StatusProgress currentStatus={o.status} isDarkMode={true} />
+                               
+                               <div className="mt-4 pt-3 border-top border-gray-800 d-flex gap-3">
+                                  {tData ? (
+                                    <button onClick={() => { setActiveTrackingId(o.id); setCurrentView('tracking'); }} className="btn btn-danger text-white flex-grow-1 py-3 rounded-4 fw-black shadow-lg shadow-red-500/20">FULL SCREEN TRACK</button>
+                                  ) : (
+                                    <button onClick={() => { setSelectedRestaurant(restaurants.find(r => r.id === o.items?.[0]?.restaurantId)); setCurrentView('restaurant'); }} className="btn btn-danger text-white flex-grow-1 py-3 rounded-4 fw-black">REORDER</button>
+                                  )}
+                                  <button onClick={() => setIsSupportOpen(true)} className="btn bg-gray-800 text-white p-3 rounded-4 hover:bg-gray-700 transition-colors" title="Order Help"><HeadsetIcon className="w-5 h-5" /></button>
+                               </div>
+                            </div>
+
+                            {tData && (
+                              <div className="col-lg-7">
+                                 <div className="position-relative h-100 rounded-5 overflow-hidden border border-gray-800">
+                                    <InteractiveMap 
+                                      isDarkMode={true}
+                                      center={tData.courierPos}
+                                      markers={[
+                                        { position: tData.restCoords, color: 'danger', label: '🏪' },
+                                        { position: tData.homeCoords, color: 'primary', label: '🏠' },
+                                        { position: tData.courierPos, color: 'warning', label: '🚲', pulse: true }
+                                      ]}
+                                      polyline={[tData.restCoords, tData.courierPos, tData.homeCoords]}
+                                      height="320px"
+                                    />
+                                    <div className="position-absolute bottom-4 left-4 bg-danger text-white px-3 py-1 rounded-pill small fw-black shadow-lg" style={{ zIndex: 500 }}>
+                                      Live Tracking Active
+                                    </div>
+                                 </div>
+                              </div>
+                            )}
+                         </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {orders.length === 0 && (
                    <div className="col-12 text-center py-5">
                       <p className="text-muted fw-bold">No orders found. Start your food journey today!</p>
@@ -526,71 +718,79 @@ const App = () => {
           </div>
         )}
 
-        {currentView === 'tracking' && activeOrder && trackingData && (
+        {currentView === 'tracking' && activeOrder && (
           <div className="animate-fadeIn">
-             <div className="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                   <h2 className={`fw-black m-0 tracking-tighter ${isDarkMode ? 'text-white' : 'text-dark'}`}>Tracking Order #{activeOrder.id}</h2>
-                   <p className="text-muted fw-bold uppercase small tracking-widest mt-1">Status: <span className="text-danger">{STATUS_LABELS[activeOrder.status]}</span></p>
-                </div>
-                <button onClick={() => setCurrentView('history')} className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-black">BACK TO HISTORY</button>
-             </div>
-             
-             <div className="row g-4">
-                <div className="col-lg-8">
-                   <InteractiveMap 
-                      isDarkMode={isDarkMode}
-                      center={trackingData.courierPos}
-                      markers={[
-                        { position: trackingData.restCoords, color: 'danger', label: '🏪' },
-                        { position: trackingData.homeCoords, color: 'primary', label: '🏠' },
-                        { position: trackingData.courierPos, color: 'warning', label: '🚲', pulse: true }
-                      ]}
-                      polyline={[trackingData.restCoords, trackingData.courierPos, trackingData.homeCoords]}
-                   />
-                </div>
-                <div className="col-lg-4">
-                   <div className={`card border-0 z-shadow rounded-5 p-4 h-100 ${isDarkMode ? 'bg-[#1e1e1e] text-white' : 'bg-white'}`}>
-                      <div className="mb-5">
-                         <h4 className="fw-black mb-1">Estimated Arrival</h4>
-                         <p className="display-6 fw-black text-danger mb-0">12 mins</p>
-                         <p className="small text-muted fw-bold uppercase tracking-widest">Rider is on the way</p>
+             {(() => {
+               const tData = getTrackingData(activeOrder);
+               if (!tData) return <p className="text-white">Loading tracking data...</p>;
+               return (
+                 <>
+                   <div className="d-flex justify-content-between align-items-center mb-4">
+                      <div>
+                         <h2 className={`fw-black m-0 tracking-tighter ${isDarkMode ? 'text-white' : 'text-dark'}`}>Tracking Order #{activeOrder.id}</h2>
+                         <p className="text-muted fw-bold uppercase small tracking-widest mt-1">Status: <span className="text-danger">{STATUS_LABELS[activeOrder.status]}</span></p>
                       </div>
-                      
-                      <div className="d-flex flex-column gap-4">
-                         {ORDER_STATUS_STEPS.map((step, idx) => {
-                           const statusIdx = ORDER_STATUS_STEPS.indexOf(activeOrder.status);
-                           const isCurrent = step === activeOrder.status;
-                           const isDone = ORDER_STATUS_STEPS.indexOf(step) < statusIdx;
-                           return (
-                             <div key={step} className={`d-flex gap-3 align-items-center ${isCurrent || isDone ? 'opacity-100' : 'opacity-30'}`}>
-                                <div className={`rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 transition-all ${isCurrent ? 'bg-danger scale-110 shadow-lg shadow-red-500/40' : isDone ? 'bg-success' : 'bg-gray-800'}`} style={{width: '32px', height: '32px'}}>
-                                   {isDone ? <span className="text-white small">✓</span> : <span className="text-white small fw-black">{idx + 1}</span>}
-                                </div>
-                                <div className="flex-grow-1">
-                                   <p className={`m-0 fw-black small ${isCurrent ? 'text-danger' : ''}`}>{STATUS_LABELS[step]}</p>
-                                   {isCurrent && <div className="progress mt-1" style={{height: '3px'}}><div className="progress-bar progress-bar-striped progress-bar-animated bg-danger w-100"></div></div>}
-                                </div>
-                             </div>
-                           )
-                         })}
+                      <button onClick={() => setCurrentView('history')} className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-black">BACK TO HISTORY</button>
+                   </div>
+                   
+                   <div className="row g-4">
+                      <div className="col-lg-8">
+                         <InteractiveMap 
+                            isDarkMode={isDarkMode}
+                            center={tData.courierPos}
+                            markers={[
+                              { position: tData.restCoords, color: 'danger', label: '🏪' },
+                              { position: tData.homeCoords, color: 'primary', label: '🏠' },
+                              { position: tData.courierPos, color: 'warning', label: '🚲', pulse: true }
+                            ]}
+                            polyline={[tData.restCoords, tData.courierPos, tData.homeCoords]}
+                         />
                       </div>
+                      <div className="col-lg-4">
+                         <div className={`card border-0 z-shadow rounded-5 p-4 h-100 ${isDarkMode ? 'bg-[#1e1e1e] text-white' : 'bg-white'}`}>
+                            <div className="mb-5">
+                               <h4 className="fw-black mb-1">Estimated Arrival</h4>
+                               <p className="display-6 fw-black text-danger mb-0">12 mins</p>
+                               <p className="small text-muted fw-bold uppercase tracking-widest">Rider is on the way</p>
+                            </div>
+                            
+                            <div className="d-flex flex-column gap-4">
+                               {ORDER_STATUS_STEPS.map((step, idx) => {
+                                 const statusIdx = ORDER_STATUS_STEPS.indexOf(activeOrder.status);
+                                 const isCurrent = step === activeOrder.status;
+                                 const isDone = ORDER_STATUS_STEPS.indexOf(step) < statusIdx;
+                                 return (
+                                   <div key={step} className={`d-flex gap-3 align-items-center ${isCurrent || isDone ? 'opacity-100' : 'opacity-30'}`}>
+                                      <div className={`rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 transition-all ${isCurrent ? 'bg-danger scale-110 shadow-lg shadow-red-500/40' : isDone ? 'bg-success' : 'bg-gray-800'}`} style={{width: '32px', height: '32px'}}>
+                                         {isDone ? <span className="text-white small">✓</span> : <span className="text-white small fw-black">{idx + 1}</span>}
+                                      </div>
+                                      <div className="flex-grow-1">
+                                         <p className={`m-0 fw-black small ${isCurrent ? 'text-danger' : ''}`}>{STATUS_LABELS[step]}</p>
+                                         {isCurrent && <div className="progress mt-1" style={{height: '3px'}}><div className="progress-bar progress-bar-striped progress-bar-animated bg-danger w-100"></div></div>}
+                                      </div>
+                                   </div>
+                                 )
+                               })}
+                            </div>
 
-                      <div className="mt-auto pt-5">
-                         <div className="d-flex align-items-center gap-3 mb-4 p-3 rounded-4 bg-gray-50/5 border border-gray-800">
-                            <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=200" className="w-12 h-12 rounded-circle object-cover" />
-                            <div>
-                               <p className="m-0 fw-black small">Rajesh Kumar</p>
-                               <p className="m-0 text-muted x-small">Top Rated Rider ★ 4.9</p>
+                            <div className="mt-auto pt-5">
+                               <div className="d-flex align-items-center gap-3 mb-4 p-3 rounded-4 bg-gray-50/5 border border-gray-800">
+                                  <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=200" className="w-12 h-12 rounded-circle object-cover" />
+                                  <div>
+                                     <p className="m-0 fw-black small text-white">Rajesh Kumar</p>
+                                     <p className="m-0 text-muted x-small">Top Rated Rider ★ 4.9</p>
+                                  </div>
+                               </div>
+                               <button onClick={() => setIsSupportOpen(true)} className="btn btn-danger w-100 py-3 rounded-4 fw-black shadow-lg shadow-red-500/30 d-flex align-items-center justify-content-center gap-2">
+                                 <HeadsetIcon className="w-5 h-5" /> HELP WITH ORDER
+                               </button>
                             </div>
                          </div>
-                         <button onClick={() => setIsSupportOpen(true)} className="btn btn-danger w-100 py-3 rounded-4 fw-black shadow-lg shadow-red-500/30 d-flex align-items-center justify-content-center gap-2">
-                           <HeadsetIcon className="w-5 h-5" /> HELP WITH ORDER
-                         </button>
                       </div>
                    </div>
-                </div>
-             </div>
+                 </>
+               );
+             })()}
           </div>
         )}
 
@@ -662,4 +862,10 @@ const App = () => {
                       </div>
                       <p className="small text-muted mt-2">Incl. delivery fee of ₹40</p>
                     </div>
-                    <button onClick={async () =>
+                    <button onClick={async () => {
+                      const id = Math.random().toString(36).substr(2,6).toUpperCase();
+                      await db.saveOrder({ id, status: 'preparing', items: [...cart], timestamp: Date.now() });
+                      setCart([]);
+                      setOrders(await db.getOrders());
+                      setCurrentView('history');
+                    }} className="btn btn-danger w-100 py-4 rounded-4 fw-black shadow-lg shadow-red-500/30">CONFIRM ORDER</
