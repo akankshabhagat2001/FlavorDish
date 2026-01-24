@@ -85,6 +85,14 @@ class DatabaseService {
     return true;
   }
 
+  async updateOrderStatus(orderId, newStatus) {
+    await this.delay(400);
+    const orders = await this.getOrders();
+    const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+    localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(updated));
+    return updated;
+  }
+
   async getCart() {
     await this.delay();
     const data = localStorage.getItem(STORAGE_KEYS.CART);
