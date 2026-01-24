@@ -33,6 +33,9 @@ const MapIcon = ({ className = "w-5 h-5" }) => (
 const GpsIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1c0-.55-.45-1-1-1s-1 .45-1 1v2.06C6.83 3.52 3.52 6.83 3.06 11H1c-.55 0-1 .45-1 1s.45 1 1 1h2.06c.46 4.17 3.77 7.48 7.94 7.94V23c0 .55.45 1 1 1s1-.45 1-1v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23c.55 0 1-.45 1-1s-.45-1-1-1h-2.06z" /></svg>
 );
+const UserCircleIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+);
 
 const ORDER_STATUS_STEPS = ['preparing', 'picked_up', 'delivering', 'near_you', 'delivered'];
 const STATUS_LABELS = {
@@ -45,7 +48,7 @@ const STATUS_LABELS = {
 
 // --- Sub-components ---
 
-const LiveSupportPanel = ({ isOpen, onClose, isDarkMode }) => {
+const LiveSupportPanel = ({ isOpen, onClose }) => {
   const [status, setStatus] = useState('disconnected');
   const [transcript, setTranscript] = useState([]);
   const sessionRef = useRef(null);
@@ -100,7 +103,7 @@ const LiveSupportPanel = ({ isOpen, onClose, isDarkMode }) => {
 
   return (
     <div className="fixed-bottom p-4 d-flex justify-content-end pointer-events-none" style={{ zIndex: 2000 }}>
-      <div className={`card border-0 z-shadow rounded-5 overflow-hidden d-flex flex-column pointer-events-auto animate-fadeIn shadow-2xl ${isDarkMode ? 'bg-[#1a1a1a] text-white border border-gray-800' : 'bg-white text-dark'}`} style={{ width: '100%', maxWidth: '400px', height: '600px' }}>
+      <div className={`card border-0 z-shadow rounded-5 overflow-hidden d-flex flex-column pointer-events-auto animate-fadeIn shadow-2xl bg-[#1a1a1a] text-white border border-gray-800`} style={{ width: '100%', maxWidth: '400px', height: '600px' }}>
         <div className="p-4 bg-danger text-white d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center gap-3">
             <div className={`rounded-circle p-2 bg-white/20 ${status === 'active' ? 'animate-pulse' : ''}`}><HeadsetIcon className="w-5 h-5" /></div>
@@ -119,15 +122,15 @@ const LiveSupportPanel = ({ isOpen, onClose, isDarkMode }) => {
             </div>
           )}
           {transcript.map((msg, i) => (
-            <div key={i} className={`max-w-[85%] p-3 rounded-4 small fw-bold ${msg.role === 'user' ? 'align-self-end bg-danger text-white rounded-tr-none' : (isDarkMode ? 'bg-gray-800 text-white rounded-tl-none' : 'bg-gray-100 text-dark rounded-tl-none')}`}>
+            <div key={i} className={`max-w-[85%] p-3 rounded-4 small fw-bold ${msg.role === 'user' ? 'align-self-end bg-danger text-white rounded-tr-none' : 'bg-gray-800 text-white rounded-tl-none'}`}>
               {msg.text}
             </div>
           ))}
         </div>
-        <div className={`p-4 border-top ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
+        <div className="p-4 border-top border-gray-800">
           <div className="d-flex align-items-center gap-3">
              <div className="flex-grow-1">
-                <div className={`h-1 rounded-pill overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                <div className="h-1 rounded-pill overflow-hidden bg-gray-800">
                    <div className={`h-100 bg-danger transition-all duration-300 ${status === 'active' ? 'w-1/2' : 'w-0'}`} />
                 </div>
                 <p className="small m-0 mt-2 opacity-50 fw-bold uppercase" style={{ fontSize: '9px' }}>{status === 'active' ? 'Listening to your voice...' : 'Activating microphone...'}</p>
@@ -140,7 +143,7 @@ const LiveSupportPanel = ({ isOpen, onClose, isDarkMode }) => {
   );
 };
 
-const InteractiveMap = ({ center, isDarkMode, markers = [], polyline = [], height = '450px', zoom = 15 }) => {
+const InteractiveMap = ({ center, markers = [], polyline = [], height = '450px', zoom = 15 }) => {
   const mapRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -148,10 +151,9 @@ const InteractiveMap = ({ center, isDarkMode, markers = [], polyline = [], heigh
     if (!containerRef.current) return;
     const map = L.map(containerRef.current, { center: center || [23.0225, 72.5714], zoom: zoom, zoomControl: false, attributionControl: false });
     mapRef.current = map;
-    const tileUrl = isDarkMode ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png';
-    L.tileLayer(tileUrl).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
     return () => map.remove();
-  }, [isDarkMode]);
+  }, []);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -165,14 +167,14 @@ const InteractiveMap = ({ center, isDarkMode, markers = [], polyline = [], heigh
       });
       L.marker(m.position, { icon }).addTo(map);
     });
-    if (polyline.length > 0) L.polyline(polyline, { color: isDarkMode ? '#ff4d4d' : '#dc3545', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(map);
+    if (polyline.length > 0) L.polyline(polyline, { color: '#ff4d4d', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(map);
     if (center) map.setView(center, zoom, { animate: true, duration: 1 });
-  }, [markers, polyline, center, isDarkMode, zoom]);
+  }, [markers, polyline, center, zoom]);
 
-  return <div ref={containerRef} className={`w-100 h-100 rounded-5 overflow-hidden z-shadow border ${isDarkMode ? 'border-gray-800' : 'border-white'}`} style={{ minHeight: height }} />;
+  return <div ref={containerRef} className="w-100 h-100 rounded-5 overflow-hidden z-shadow border border-gray-800" style={{ minHeight: height }} />;
 };
 
-const StatusProgress = ({ currentStatus, isDarkMode }) => {
+const StatusProgress = ({ currentStatus }) => {
   const currentIdx = ORDER_STATUS_STEPS.indexOf(currentStatus);
   return (
     <div className="w-100 mb-4">
@@ -191,24 +193,24 @@ const StatusProgress = ({ currentStatus, isDarkMode }) => {
   );
 };
 
-const RestaurantCard = ({ restaurant, onClick, isDarkMode }) => (
-  <div onClick={onClick} className={`card border-0 rounded-4 z-shadow z-shadow-hover cursor-pointer overflow-hidden transition-all h-100 ${isDarkMode ? 'bg-[#1e1e1e] text-white' : 'bg-white text-dark'}`}>
+const RestaurantCard = ({ restaurant, onClick }) => (
+  <div onClick={onClick} className="card border-0 rounded-4 z-shadow z-shadow-hover cursor-pointer overflow-hidden transition-all h-100 bg-[#1e1e1e] text-white">
     <div className="position-relative">
       <img src={restaurant.image} className="card-img-top object-cover h-48 md:h-56" alt={restaurant.name} />
-      <div className={`position-absolute top-3 end-3 px-2 py-1 rounded-2 z-shadow d-flex align-items-center gap-1 ${isDarkMode ? 'bg-[#2a2a2a] text-white' : 'bg-white text-dark'}`}>
+      <div className="position-absolute top-3 end-3 px-2 py-1 rounded-2 z-shadow d-flex align-items-center gap-1 bg-[#2a2a2a] text-white">
         <span className="fw-bold" style={{fontSize: '12px'}}>{restaurant.rating}</span>
         <StarIcon className="w-3 h-3 text-warning" />
       </div>
     </div>
     <div className="card-body">
       <h5 className="card-title fw-black m-0 text-truncate">{restaurant.name}</h5>
-      <p className={`card-text small truncate mb-2 ${isDarkMode ? 'text-gray-400' : 'text-muted'}`}>{restaurant.cuisine}</p>
+      <p className="card-text small truncate mb-2 text-gray-400">{restaurant.cuisine}</p>
     </div>
   </div>
 );
 
 const App = () => {
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [isDarkMode] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState('home');
   const [restaurants, setRestaurants] = useState([]);
@@ -221,8 +223,6 @@ const App = () => {
   const [userCoords, setUserCoords] = useState({ latitude: 23.0225, longitude: 72.5714 });
   const [activeTrackingId, setActiveTrackingId] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const [batchEnhancedMenu, setBatchEnhancedMenu] = useState({});
-  const [isEnhancing, setIsEnhancing] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [courierDrift, setCourierDrift] = useState(0);
@@ -238,9 +238,9 @@ const App = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-    document.body.style.backgroundColor = isDarkMode ? '#121212' : '#ffffff';
-  }, [isDarkMode]);
+    document.body.style.backgroundColor = '#0a0a0a';
+    document.body.classList.add('dark-mode');
+  }, []);
 
   useEffect(() => {
     const user = db.getCurrentUser();
@@ -354,13 +354,18 @@ const App = () => {
     setCurrentView('checkout');
   };
 
-  // --- Dynamic Map Positioning for Checkout ---
   const checkoutMapCenter = useMemo(() => {
     if (isUsingGps) return [userCoords.latitude, userCoords.longitude];
-    // Mock geocoding: shift slightly based on address length or characters for visual feedback
     const shift = (deliveryAddress.length % 10) * 0.001;
     return [userCoords.latitude + shift, userCoords.longitude + shift];
   }, [isUsingGps, userCoords, deliveryAddress]);
+
+  // --- Profile Stats Calculation ---
+  const userStats = useMemo(() => {
+    const totalOrders = orders.length;
+    const totalSpent = orders.reduce((acc, o) => acc + (o.total || 0), 0);
+    return { totalOrders, totalSpent };
+  }, [orders]);
 
   // --- Partner Portal UI ---
   const PartnerDashboard = () => {
@@ -371,40 +376,31 @@ const App = () => {
     const chartData = useMemo(() => {
       const datasets = {
         week: [
-          { name: 'Mon', revenue: 4200, orders: 12 },
-          { name: 'Tue', revenue: 3800, orders: 10 },
-          { name: 'Wed', revenue: 5100, orders: 15 },
-          { name: 'Thu', revenue: 4900, orders: 14 },
-          { name: 'Fri', revenue: 7200, orders: 22 },
-          { name: 'Sat', revenue: 8500, orders: 28 },
-          { name: 'Sun', revenue: 6400, orders: 20 },
+          { name: 'Mon', revenue: 4200 },
+          { name: 'Tue', revenue: 3800 },
+          { name: 'Wed', revenue: 5100 },
+          { name: 'Thu', revenue: 4900 },
+          { name: 'Fri', revenue: 7200 },
+          { name: 'Sat', revenue: 8500 },
+          { name: 'Sun', revenue: 6400 },
         ],
         month: [
-          { name: 'W1', revenue: 32000, orders: 95 },
-          { name: 'W2', revenue: 41000, orders: 120 },
-          { name: 'W3', revenue: 38000, orders: 110 },
-          { name: 'W4', revenue: 52000, orders: 150 },
+          { name: 'W1', revenue: 32000 },
+          { name: 'W2', revenue: 41000 },
+          { name: 'W3', revenue: 38000 },
+          { name: 'W4', revenue: 52000 },
         ],
         year: [
-          { name: 'Jan', revenue: 150000, orders: 450 },
-          { name: 'Feb', revenue: 180000, orders: 520 },
-          { name: 'Mar', revenue: 210000, orders: 600 },
-          { name: 'Apr', revenue: 195000, orders: 580 },
-          { name: 'May', revenue: 230000, orders: 680 },
-          { name: 'Jun', revenue: 250000, orders: 750 },
-          { name: 'Jul', revenue: 280000, orders: 820 },
-          { name: 'Aug', revenue: 265000, orders: 790 },
-          { name: 'Sep', revenue: 240000, orders: 710 },
-          { name: 'Oct', revenue: 290000, orders: 860 },
-          { name: 'Nov', revenue: 310000, orders: 920 },
-          { name: 'Dec', revenue: 350000, orders: 1050 },
+          { name: 'Jan', revenue: 150000 },
+          { name: 'Feb', revenue: 180000 },
+          { name: 'Mar', revenue: 210000 },
         ]
       };
-      return datasets[dateRange];
+      return datasets[dateRange] || datasets.week;
     }, [dateRange]);
 
     return (
-      <div className={`d-flex ${isDarkMode ? 'bg-[#0f0f0f] text-white' : 'bg-[#f8f9fb] text-dark'}`} style={{ minHeight: '100vh', marginTop: '-112px' }}>
+      <div className="d-flex bg-[#0a0a0a] text-white" style={{ minHeight: '100vh', marginTop: '-112px' }}>
          <div className={`transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'} border-end border-gray-800/20 d-flex flex-column sticky-top h-screen bg-inherit`}>
             <div className="p-4 d-flex align-items-center gap-3 mb-5 mt-28">
                <SparklesIcon className="text-danger w-8 h-8 flex-shrink-0" />
@@ -414,10 +410,9 @@ const App = () => {
                {[
                  { id: 'admin-dashboard', label: 'Overview', icon: <ChartIcon /> },
                  { id: 'admin-orders', label: 'Live Orders', icon: <PackageIcon /> },
-                 { id: 'admin-menu', label: 'Menu Commander', icon: <TagIcon /> },
-                 { id: 'admin-insights', label: 'AI Growth', icon: <SparklesIcon /> }
+                 { id: 'admin-menu', label: 'Menu Commander', icon: <TagIcon /> }
                ].map(item => (
-                 <button key={item.id} onClick={() => setCurrentView(item.id)} className={`btn border-0 text-start py-3 px-3 rounded-4 d-flex align-items-center gap-3 transition-all ${currentView === item.id ? 'bg-danger text-white shadow-lg shadow-red-500/20' : (isDarkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-600 hover:bg-gray-100')}`}>
+                 <button key={item.id} onClick={() => setCurrentView(item.id)} className={`btn border-0 text-start py-3 px-3 rounded-4 d-flex align-items-center gap-3 transition-all ${currentView === item.id ? 'bg-danger text-white shadow-lg shadow-red-500/20' : 'text-gray-400 hover:bg-gray-800'}`}>
                     <span className="flex-shrink-0">{item.icon}</span>
                     {sidebarOpen && <span className="fw-bold small uppercase tracking-widest">{item.label}</span>}
                  </button>
@@ -430,86 +425,36 @@ const App = () => {
 
          <div className="flex-grow-1 p-5 mt-28">
             <div className="d-flex justify-content-between align-items-center mb-5">
-               <div>
-                  <h1 className="fw-black m-0 tracking-tighter">Welcome back, Amdavadi Spice</h1>
-                  <p className="text-muted fw-bold uppercase small tracking-widest">Growth Analytics</p>
-               </div>
-               <div className="d-flex gap-3 align-items-center">
-                  <div className={`rounded-pill p-1 border border-gray-800/20 d-flex gap-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
-                     {['week', 'month', 'year'].map(r => (
-                       <button 
-                         key={r} 
-                         onClick={() => setDateRange(r)}
-                         className={`btn btn-sm rounded-pill px-3 fw-black uppercase tracking-widest transition-all ${dateRange === r ? 'bg-danger text-white' : 'text-muted'}`}
-                         style={{ fontSize: '10px' }}
-                       >
-                         {r}
-                       </button>
-                     ))}
-                  </div>
-                  <button onClick={() => { db.logout(); setCurrentUser(null); }} className="btn btn-outline-danger px-4 rounded-pill fw-black small">LOGOUT</button>
-               </div>
+               <h1 className="fw-black m-0 tracking-tighter">Welcome back, Admin</h1>
+               <button onClick={() => { db.logout(); setCurrentUser(null); }} className="btn btn-outline-danger px-4 rounded-pill fw-black small">LOGOUT</button>
             </div>
-
             <div className="row g-4 mb-5">
-               {[
-                 { label: 'Period Revenue', value: `₹${chartData.reduce((acc, v) => acc + v.revenue, 0).toLocaleString()}`, icon: <ChartIcon className="text-success" />, delta: '+12%', positive: true },
-                 { label: 'Live Orders', value: liveOrdersCount, icon: <PackageIcon className="text-danger" />, delta: 'Kitchen Active', positive: true },
-                 { label: 'Rating Score', value: '4.9', icon: <StarIcon className="text-warning" />, delta: 'Top Tier', positive: true },
-                 { label: 'Retention', value: '78%', icon: <UsersIcon className="text-primary" />, delta: 'Elite Status', positive: true }
-               ].map((stat, i) => (
-                 <div key={i} className="col-12 col-md-6 col-lg-3">
-                    <div className={`card border-0 z-shadow rounded-5 p-4 ${isDarkMode ? 'bg-[#1a1a1a] border border-gray-800' : 'bg-white'}`}>
-                       <div className="d-flex justify-content-between align-items-start mb-3">
-                          <div className="p-2 rounded-4 bg-gray-500/10">{stat.icon}</div>
-                          <span className={`small fw-bold px-2 py-1 rounded-pill ${stat.positive ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`} style={{fontSize: '10px'}}>{stat.delta}</span>
-                       </div>
-                       <p className="small text-muted fw-bold uppercase tracking-widest mb-1">{stat.label}</p>
-                       <h2 className="fw-black m-0">{stat.value}</h2>
-                    </div>
-                 </div>
-               ))}
-            </div>
-
-            <div className={`card border-0 z-shadow rounded-5 p-4 ${isDarkMode ? 'bg-[#1a1a1a] border border-gray-800' : 'bg-white'}`}>
-               <h4 className="fw-black mb-4">Live Order Management</h4>
-               <div className="table-responsive">
-                  <table className="table table-borderless align-middle mb-0">
-                     <thead className="border-bottom border-gray-800/10">
-                        <tr className="text-muted small uppercase tracking-widest">
-                           <th className="py-3">Order ID</th>
-                           <th className="py-3">Items</th>
-                           <th className="py-3">Status</th>
-                           <th className="py-3 text-end">Action</th>
-                        </tr>
-                     </thead>
-                     <tbody>
-                        {orders.filter(o => o.status !== 'delivered').map(o => (
-                          <tr key={o.id} className="border-bottom border-gray-800/5">
-                             <td className="py-4"><span className="fw-black text-danger">#{o.id}</span></td>
-                             <td>
-                               {o.items.map((it, idx) => (<div key={idx} className="small opacity-80">{it.quantity}x {it.name}</div>))}
-                               {o.specialInstructions && (
-                                 <div className="mt-2 p-2 rounded bg-danger/5 border border-danger/10 small italic text-danger">
-                                   Note: {o.specialInstructions}
-                                 </div>
-                               )}
-                             </td>
-                             <td><span className="badge rounded-pill bg-warning/10 text-warning px-3 py-2 fw-bold uppercase">{o.status}</span></td>
-                             <td className="text-end">
-                                <div className="dropdown">
-                                   <button className="btn btn-outline-danger btn-sm rounded-pill px-3 dropdown-toggle fw-bold" data-bs-toggle="dropdown">UPDATE</button>
-                                   <ul className={`dropdown-menu ${isDarkMode ? 'dropdown-menu-dark' : ''}`}>
-                                      {ORDER_STATUS_STEPS.map(step => (
-                                        <li key={step}><button onClick={() => updateGlobalStatus(o.id, step)} className="dropdown-item small fw-bold">{STATUS_LABELS[step]}</button></li>
-                                      ))}
-                                   </ul>
-                                </div>
-                             </td>
-                          </tr>
-                        ))}
-                     </tbody>
-                  </table>
+               <div className="col-lg-12">
+                  <div className="card border-0 z-shadow rounded-5 p-4 bg-[#1a1a1a] border border-gray-800">
+                     <h4 className="fw-black mb-4">Live Order Management</h4>
+                     <div className="table-responsive">
+                        <table className="table table-borderless align-middle mb-0 text-white">
+                           <thead className="border-bottom border-gray-800/10">
+                              <tr className="text-muted small uppercase tracking-widest">
+                                 <th className="py-3">Order ID</th>
+                                 <th className="py-3">Status</th>
+                                 <th className="py-3 text-end">Action</th>
+                              </tr>
+                           </thead>
+                           <tbody>
+                              {orders.filter(o => o.status !== 'delivered').map(o => (
+                                <tr key={o.id} className="border-bottom border-gray-800/5">
+                                   <td className="py-4"><span className="fw-black text-danger">#{o.id}</span></td>
+                                   <td><span className="badge rounded-pill bg-warning/10 text-warning px-3 py-2 fw-bold uppercase">{o.status}</span></td>
+                                   <td className="text-end">
+                                      <button onClick={() => updateGlobalStatus(o.id, 'delivered')} className="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold">MARK DELIVERED</button>
+                                   </td>
+                                </tr>
+                              ))}
+                           </tbody>
+                        </table>
+                     </div>
+                  </div>
                </div>
             </div>
          </div>
@@ -517,10 +462,70 @@ const App = () => {
     );
   };
 
+  // --- Profile View ---
+  const ProfileView = () => (
+    <div className="animate-fadeIn">
+      <div className="row g-4">
+        <div className="col-lg-4">
+          <div className="card border-0 z-shadow rounded-5 p-5 bg-[#1a1a1a] text-white border border-gray-800 text-center h-100">
+            <div className="mx-auto mb-4 bg-danger/10 p-4 rounded-circle d-inline-block">
+               <UserCircleIcon className="w-20 h-20 text-danger" />
+            </div>
+            <h3 className="fw-black tracking-tighter mb-1">{currentUser.name}</h3>
+            <p className="text-muted small fw-bold uppercase tracking-widest mb-4">Amdavadi Food Enthusiast</p>
+            <div className="d-flex flex-column gap-3 mt-4">
+               <div className="p-3 rounded-4 bg-[#111] border border-gray-800 text-start">
+                  <p className="x-small text-muted fw-bold uppercase tracking-widest mb-1" style={{fontSize: '9px'}}>Email Address</p>
+                  <p className="small m-0 fw-bold">{currentUser.username}@flavordish.com</p>
+               </div>
+               <div className="p-3 rounded-4 bg-[#111] border border-gray-800 text-start">
+                  <p className="x-small text-muted fw-bold uppercase tracking-widest mb-1" style={{fontSize: '9px'}}>Account Tier</p>
+                  <p className="small m-0 fw-bold text-danger">Diamond Member</p>
+               </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-lg-8">
+           <div className="row g-4 h-100">
+              <div className="col-md-6">
+                 <div className="card border-0 z-shadow rounded-5 p-5 bg-[#1a1a1a] text-white border border-gray-800 d-flex flex-column align-items-center justify-content-center h-100">
+                    <PackageIcon className="w-12 h-12 text-primary mb-3" />
+                    <p className="small text-muted fw-bold uppercase tracking-widest mb-1">Total Orders</p>
+                    <h1 className="display-4 fw-black m-0">{userStats.totalOrders}</h1>
+                 </div>
+              </div>
+              <div className="col-md-6">
+                 <div className="card border-0 z-shadow rounded-5 p-5 bg-[#1a1a1a] text-white border border-gray-800 d-flex flex-column align-items-center justify-content-center h-100">
+                    <TagIcon className="w-12 h-12 text-success mb-3" />
+                    <p className="small text-muted fw-bold uppercase tracking-widest mb-1">Total Lifetime Spent</p>
+                    <h1 className="display-4 fw-black m-0 text-success">₹{userStats.totalSpent}</h1>
+                 </div>
+              </div>
+              <div className="col-12">
+                 <div className="card border-0 z-shadow rounded-5 p-5 bg-[#1a1a1a] text-white border border-gray-800">
+                    <h4 className="fw-black mb-4 d-flex align-items-center gap-2"><SparklesIcon className="text-danger" /> Member Benefits</h4>
+                    <div className="row g-3">
+                       {['Priority Delivery', 'Zero Delivery Fee', 'Early Access to Deals', 'Exclusive Amdavadi Treats'].map((benefit, i) => (
+                         <div key={i} className="col-md-6">
+                            <div className="d-flex align-items-center gap-3 p-3 rounded-4 bg-gray-500/5">
+                               <div className="bg-success/20 p-2 rounded-circle"><StarIcon className="text-success w-4 h-4" /></div>
+                               <span className="fw-bold small">{benefit}</span>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // --- Login Screen ---
   if (!currentUser) return (
-    <div className={`min-h-screen d-flex align-items-center justify-content-center p-4 ${isDarkMode ? 'bg-[#0f0f0f]' : 'bg-[#f8fafc]'}`}>
-       <div className={`card border-0 z-shadow rounded-5 overflow-hidden animate-fadeIn ${isDarkMode ? 'bg-[#1a1a1a] text-white' : 'bg-white text-dark'}`} style={{ maxWidth: '1000px', width: '100%' }}>
+    <div className="min-h-screen d-flex align-items-center justify-content-center p-4 bg-[#0a0a0a]">
+       <div className="card border-0 z-shadow rounded-5 overflow-hidden animate-fadeIn bg-[#1a1a1a] text-white border border-gray-800" style={{ maxWidth: '1000px', width: '100%' }}>
           <div className="row g-0">
              <div className="col-md-6 border-end border-gray-800/10">
                 <div className="p-5 d-flex flex-column justify-content-center h-100">
@@ -530,13 +535,13 @@ const App = () => {
                       <p className="text-muted small fw-bold uppercase tracking-widest">Premium Food Discovery</p>
                    </div>
                    <form onSubmit={handleLogin} className="d-flex flex-column gap-3">
-                      <input type="text" className={`form-control py-3 px-4 rounded-4 border-2 ${isDarkMode ? 'bg-[#111] border-gray-800 text-white' : 'bg-gray-50'}`} placeholder="Username (user)" onChange={e => setUsernameInput(e.target.value)} required />
-                      <input type="password" className={`form-control py-3 px-4 rounded-4 border-2 ${isDarkMode ? 'bg-[#111] border-gray-800 text-white' : 'bg-gray-50'}`} placeholder="Password (pass)" onChange={e => setPasswordInput(e.target.value)} required />
+                      <input type="text" className="form-control py-3 px-4 rounded-4 border-2 bg-[#111] border-gray-800 text-white shadow-none" placeholder="Username (user)" onChange={e => setUsernameInput(e.target.value)} required />
+                      <input type="password" className="form-control py-3 px-4 rounded-4 border-2 bg-[#111] border-gray-800 text-white shadow-none" placeholder="Password (pass)" onChange={e => setPasswordInput(e.target.value)} required />
                       <button type="submit" disabled={isLoggingIn} className="btn btn-danger py-3 rounded-4 fw-black tracking-tighter shadow-lg shadow-red-500/20 mt-2">LOGIN AS GUEST</button>
                    </form>
                 </div>
              </div>
-             <div className={`col-md-6 ${isDarkMode ? 'bg-[#151515]' : 'bg-gray-50'}`}>
+             <div className="col-md-6 bg-[#151515]">
                 <div className="p-5 d-flex flex-column justify-content-center h-100">
                    <div className="text-center mb-5">
                       <div className="bg-primary/10 p-4 rounded-circle d-inline-block mb-4"><ChartIcon className="text-primary w-12 h-12" /></div>
@@ -544,8 +549,8 @@ const App = () => {
                       <p className="text-muted small fw-bold uppercase tracking-widest">Business Growth & Analytics</p>
                    </div>
                    <form onSubmit={handleLogin} className="d-flex flex-column gap-3">
-                      <input type="text" className={`form-control py-3 px-4 rounded-4 border-2 ${isDarkMode ? 'bg-[#111] border-gray-800 text-white' : 'bg-white'}`} placeholder="Admin ID (admin)" onChange={e => setUsernameInput(e.target.value)} required />
-                      <input type="password" className={`form-control py-3 px-4 rounded-4 border-2 ${isDarkMode ? 'bg-[#111] border-gray-800 text-white' : 'bg-white'}`} placeholder="Access Key (admin)" onChange={e => setPasswordInput(e.target.value)} required />
+                      <input type="text" className="form-control py-3 px-4 rounded-4 border-2 bg-[#111] border-gray-800 text-white shadow-none" placeholder="Admin ID (admin)" onChange={e => setUsernameInput(e.target.value)} required />
+                      <input type="password" className="form-control py-3 px-4 rounded-4 border-2 bg-[#111] border-gray-800 text-white shadow-none" placeholder="Access Key (admin)" onChange={e => setPasswordInput(e.target.value)} required />
                       <button type="submit" disabled={isLoggingIn} className="btn btn-primary py-3 rounded-4 fw-black tracking-tighter shadow-lg shadow-blue-500/20 mt-2">PARTNER ACCESS</button>
                    </form>
                 </div>
@@ -557,23 +562,23 @@ const App = () => {
 
   // --- Main Application UI ---
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
+    <div className="min-h-screen bg-[#0a0a0a]">
       {currentUser.role !== 'admin' && (
-        <nav className={`fixed-top w-100 py-2 ${isDarkMode ? 'bg-[#0f0f0f]/95 backdrop-blur shadow-xl' : 'bg-[#0f0f0f]'}`} style={{ zIndex: 1100 }}>
+        <nav className="fixed-top w-100 py-2 bg-[#0f0f0f]/95 backdrop-blur shadow-xl" style={{ zIndex: 1100 }}>
           <div className="container d-flex justify-content-between align-items-center gap-3 md:gap-5">
             <div onClick={() => setCurrentView('home')} className="cursor-pointer d-flex align-items-center gap-2 flex-shrink-0">
               <SparklesIcon className="text-danger w-6 h-6 md:w-7 h-7" />
               <span className="h4 m-0 fw-black text-white tracking-tighter d-none d-md-block">FlavorDish</span>
             </div>
-            <div className="flex-grow-1 position-relative max-w-xl">
-               <div className={`d-flex align-items-center rounded-pill px-3 py-2 transition-all ${isDarkMode ? 'bg-gray-900 border border-gray-800 focus-within:border-danger' : 'bg-gray-800 border border-gray-700'}`}>
+            <div className="flex-grow-1 position-relative max-w-xl d-none d-md-block">
+               <div className="d-flex align-items-center rounded-pill px-3 py-2 transition-all bg-gray-900 border border-gray-800 focus-within:border-danger">
                   <SearchIcon className="text-gray-500 me-2" />
                   <input type="text" className="bg-transparent border-0 text-white shadow-none w-100 small fw-bold outline-none" placeholder="Find your favorite taste..." value={headerSearchTerm} onChange={(e) => { setHeaderSearchTerm(e.target.value); setShowSuggestions(true); }} onFocus={() => setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} />
                </div>
                {showSuggestions && filteredRestaurants.length > 0 && (
-                 <div className={`position-absolute top-100 start-0 w-100 mt-2 z-shadow rounded-4 overflow-hidden animate-fadeIn ${isDarkMode ? 'bg-[#1a1a1a] text-white border border-gray-800' : 'bg-white text-dark border border-gray-100'}`} style={{ zIndex: 1200 }}>
+                 <div className="position-absolute top-100 start-0 w-100 mt-2 z-shadow rounded-4 overflow-hidden animate-fadeIn bg-[#1a1a1a] text-white border border-gray-800" style={{ zIndex: 1200 }}>
                     {filteredRestaurants.map(res => (
-                      <div key={res.id} onClick={() => { setSelectedRestaurant(res); setCurrentView('restaurant'); setShowSuggestions(false); }} className={`p-3 cursor-pointer d-flex align-items-center gap-3 transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}>
+                      <div key={res.id} onClick={() => { setSelectedRestaurant(res); setCurrentView('restaurant'); setShowSuggestions(false); }} className="p-3 cursor-pointer d-flex align-items-center gap-3 transition-colors hover:bg-gray-800">
                          <img src={res.image} className="w-10 h-10 rounded-3 object-cover" />
                          <div><p className="m-0 fw-black small">{res.name}</p><p className="m-0 text-muted x-small tracking-widest uppercase" style={{fontSize: '9px'}}>{res.cuisine}</p></div>
                       </div>
@@ -582,8 +587,9 @@ const App = () => {
                )}
             </div>
             <div className="d-flex align-items-center gap-2 md:gap-4 text-white flex-shrink-0">
-              <button onClick={() => setCurrentView('discovery')} className={`small fw-black text-uppercase tracking-widest d-none d-md-block ${currentView === 'discovery' ? 'text-danger' : 'text-gray-400'}`}>DISCOVER MAP</button>
+              <button onClick={() => setCurrentView('discovery')} className={`small fw-black text-uppercase tracking-widest d-none d-md-block ${currentView === 'discovery' ? 'text-danger' : 'text-gray-400'}`}>DISCOVER</button>
               <button onClick={() => setCurrentView('history')} className={`small fw-black text-uppercase tracking-widest d-none d-md-block ${currentView === 'history' ? 'text-danger' : 'text-gray-400'}`}>MY ORDERS</button>
+              <button onClick={() => setCurrentView('profile')} className={`small fw-black text-uppercase tracking-widest d-none d-md-block ${currentView === 'profile' ? 'text-danger' : 'text-gray-400'}`}>MY PROFILE</button>
               <button onClick={() => { db.logout(); setCurrentUser(null); }} className="btn btn-outline-danger btn-sm rounded-circle p-2"><XIcon className="w-4 h-4"/></button>
               <div onClick={() => setCurrentView('checkout')} className="position-relative cursor-pointer">
                 <CartIcon className="w-5 h-5 md:w-6 h-6" />
@@ -600,15 +606,17 @@ const App = () => {
             {currentView === 'home' && (
               <div className="animate-fadeIn">
                 <div className="mb-5 position-relative rounded-5 overflow-hidden h-64 md:h-96">
-                  <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="w-100 h-100 object-cover opacity-60" />
+                  <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="w-100 h-100 object-cover opacity-40" />
                   <div className="position-absolute inset-0 d-flex flex-column align-items-center justify-content-center px-4 text-center">
                     <h1 className="display-4 fw-black text-white tracking-tighter">Ahmedabad's Finest</h1>
                     <p className="text-white fw-bold tracking-widest small mt-3 opacity-80 uppercase">Culinary Excellence Delivered</p>
                   </div>
                 </div>
-                <div className="row g-4">{restaurants.map(res => (<div key={res.id} className="col-12 col-md-6 col-lg-3"><RestaurantCard isDarkMode={isDarkMode} restaurant={res} onClick={() => { setSelectedRestaurant(res); setCurrentView('restaurant'); }} /></div>))}</div>
+                <div className="row g-4">{restaurants.map(res => (<div key={res.id} className="col-12 col-md-6 col-lg-3"><RestaurantCard restaurant={res} onClick={() => { setSelectedRestaurant(res); setCurrentView('restaurant'); }} /></div>))}</div>
               </div>
             )}
+
+            {currentView === 'profile' && <ProfileView />}
 
             {currentView === 'discovery' && (
               <div className="animate-fadeIn">
@@ -616,9 +624,8 @@ const App = () => {
                     <div className="col-lg-8">
                        <div className="position-relative rounded-5 overflow-hidden z-shadow border border-gray-800" style={{ height: '600px' }}>
                           <InteractiveMap 
-                             isDarkMode={isDarkMode} 
                              center={userCoords ? [userCoords.latitude, userCoords.longitude] : [23.0225, 72.5714]}
-                             markers={discoveryResult?.grounding?.map((chunk, idx) => ({
+                             markers={discoveryResult?.grounding?.map(() => ({
                                 position: [userCoords.latitude + (Math.random() - 0.5) * 0.02, userCoords.longitude + (Math.random() - 0.5) * 0.02],
                                 color: 'danger',
                                 label: '📍',
@@ -627,30 +634,17 @@ const App = () => {
                           />
                           <div className="position-absolute top-4 left-4 right-4" style={{ zIndex: 1000 }}>
                              <form onSubmit={handleDiscovery} className="d-flex gap-2">
-                                <input 
-                                   type="text" 
-                                   className={`form-control py-3 px-4 rounded-pill border-0 z-shadow ${isDarkMode ? 'bg-[#1a1a1a] text-white' : 'bg-white'}`} 
-                                   placeholder="Search for 'best street food' or 'biryani' in Ahmedabad..."
-                                   value={discoveryQuery}
-                                   onChange={e => setDiscoveryQuery(e.target.value)}
-                                />
-                                <button type="submit" className="btn btn-danger rounded-pill px-4 fw-black shadow-lg shadow-red-500/30">
-                                   {isDiscovering ? 'SEARCHING...' : 'DISCOVER'}
-                                </button>
+                                <input type="text" className="form-control py-3 px-4 rounded-pill border-0 z-shadow bg-[#1a1a1a] text-white shadow-none" placeholder="Search for food spots in Ahmedabad..." value={discoveryQuery} onChange={e => setDiscoveryQuery(e.target.value)} />
+                                <button type="submit" className="btn btn-danger rounded-pill px-4 fw-black shadow-lg shadow-red-500/30">{isDiscovering ? '...' : 'DISCOVER'}</button>
                              </form>
                           </div>
                        </div>
                     </div>
                     <div className="col-lg-4">
-                       <div className={`card border-0 z-shadow rounded-5 p-4 h-100 ${isDarkMode ? 'bg-[#1a1a1a] text-white' : 'bg-white'}`}>
-                          <h4 className="fw-black mb-4 d-flex align-items-center gap-2">
-                             <MapIcon className="text-danger" /> Smart Local Discovery
-                          </h4>
+                       <div className="card border-0 z-shadow rounded-5 p-4 h-100 bg-[#1a1a1a] text-white border border-gray-800">
+                          <h4 className="fw-black mb-4 d-flex align-items-center gap-2"><MapIcon className="text-danger" /> Smart Local Discovery</h4>
                           {!discoveryResult ? (
-                            <div className="text-center py-10 opacity-50">
-                               <SparklesIcon className="w-12 h-12 mx-auto mb-3 text-danger" />
-                               <p className="small fw-bold uppercase tracking-widest">Type a query to see real-time food spots in Ahmedabad.</p>
-                            </div>
+                            <div className="text-center py-10 opacity-50"><SparklesIcon className="w-12 h-12 mx-auto mb-3 text-danger" /><p className="small fw-bold uppercase tracking-widest">Discover spots in Ahmedabad.</p></div>
                           ) : (
                             <div className="overflow-auto no-scrollbar" style={{ maxHeight: '450px' }}>
                                <p className="small text-muted leading-relaxed mb-4">{discoveryResult.text}</p>
@@ -670,13 +664,13 @@ const App = () => {
 
             {currentView === 'history' && (
               <div className="animate-fadeIn">
-                 <div className="d-flex justify-content-between align-items-center mb-5"><h2 className={`fw-black m-0 tracking-tighter ${isDarkMode ? 'text-white' : 'text-dark'}`}>My Orders</h2><button onClick={() => setCurrentView('home')} className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-black">EXPLORE MORE</button></div>
+                 <div className="d-flex justify-content-between align-items-center mb-5"><h2 className="fw-black m-0 tracking-tighter text-white">My Orders</h2><button onClick={() => setCurrentView('home')} className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-black">BACK HOME</button></div>
                  <div className="row g-4">
                     {orders.map(o => {
                       const tData = ['preparing', 'picked_up', 'delivering', 'near_you'].includes(o.status) ? getTrackingData(o) : null;
                       return (
                         <div key={o.id} className="col-12">
-                          <div className={`card border-0 z-shadow rounded-5 p-4 mb-3 ${isDarkMode ? 'bg-[#111] text-white border border-gray-800' : 'bg-white border border-gray-100'}`}>
+                          <div className="card border-0 z-shadow rounded-5 p-4 mb-3 bg-[#111] text-white border border-gray-800">
                              <div className="row g-4">
                                 <div className={tData ? 'col-lg-5' : 'col-12'}>
                                    <div className="d-flex justify-content-between mb-4">
@@ -684,34 +678,17 @@ const App = () => {
                                          <div className="d-flex align-items-center gap-2 mb-1"><span className="text-danger fw-black small uppercase tracking-widest">#{o.id}</span><span className="badge bg-danger/10 text-danger rounded-pill px-2 py-0.5 fw-bold" style={{fontSize: '9px'}}>{STATUS_LABELS[o.status]}</span></div>
                                          <h4 className="fw-black m-0">{o.items?.[0]?.restaurantName}</h4>
                                       </div>
-                                      <div className="text-end"><span className="fw-black text-danger d-block">₹{o.total || o.items?.reduce((a, b) => a + (b.price * b.quantity), 40)}</span><span className="text-muted small">{new Date(o.timestamp).toLocaleDateString()}</span></div>
+                                      <div className="text-end"><span className="fw-black text-danger d-block">₹{o.total || 0}</span><span className="text-muted small">{new Date(o.timestamp).toLocaleDateString()}</span></div>
                                    </div>
-                                   <div className="mb-4">
-                                      <h6 className="text-muted small fw-bold uppercase tracking-widest mb-3">Order Items</h6>
-                                      {o.items?.map((item, idx) => (
-                                        <div key={idx} className="d-flex justify-content-between small mb-1 opacity-80">
-                                          <span>{item.quantity}x {item.name}</span>
-                                          <span>₹{item.price * item.quantity}</span>
-                                        </div>
-                                      ))}
-                                      {o.specialInstructions && (
-                                        <div className="mt-3 p-3 rounded-4 bg-gray-500/5 border border-gray-800/50">
-                                          <p className="x-small text-muted fw-bold uppercase tracking-widest mb-1" style={{fontSize: '9px'}}>Special Instructions</p>
-                                          <p className="small m-0 text-gray-400">"{o.specialInstructions}"</p>
-                                        </div>
-                                      )}
-                                   </div>
-                                   <StatusProgress currentStatus={o.status} isDarkMode={isDarkMode} />
+                                   <StatusProgress currentStatus={o.status} />
                                    <div className="mt-4 pt-3 border-top border-gray-800 d-flex gap-3">
-                                      {tData ? (<button onClick={() => { setActiveTrackingId(o.id); setCurrentView('tracking'); }} className="btn btn-danger flex-grow-1 py-3 rounded-4 fw-black shadow-lg shadow-red-500/20">FULL SCREEN TRACK</button>) : (<button onClick={() => handleReorder(o)} className="btn btn-danger flex-grow-1 py-3 rounded-4 fw-black">ORDER AGAIN</button>)}
-                                      <button onClick={() => setIsSupportOpen(true)} className={`btn p-3 rounded-4 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-dark'}`}><HeadsetIcon className="w-5 h-5" /></button>
+                                      {tData ? (<button onClick={() => { setActiveTrackingId(o.id); setCurrentView('tracking'); }} className="btn btn-danger flex-grow-1 py-3 rounded-4 fw-black">LIVE TRACK</button>) : (<button onClick={() => handleReorder(o)} className="btn btn-danger flex-grow-1 py-3 rounded-4 fw-black">ORDER AGAIN</button>)}
                                    </div>
                                 </div>
                                 {tData && (
                                   <div className="col-lg-7">
                                      <div className="position-relative h-100 rounded-5 overflow-hidden border border-gray-800">
-                                        <InteractiveMap isDarkMode={isDarkMode} center={tData.courierPos} markers={[{ position: tData.restCoords, color: 'danger', label: '🏪' }, { position: tData.homeCoords, color: 'primary', label: '🏠' }, { position: tData.courierPos, color: 'warning', label: '🚲', pulse: true }]} polyline={[tData.restCoords, tData.courierPos, tData.homeCoords]} height="320px" />
-                                        <div className="position-absolute bottom-4 left-4 bg-danger text-white px-3 py-1 rounded-pill small fw-black shadow-lg" style={{ zIndex: 500 }}>Live Tracking Active</div>
+                                        <InteractiveMap center={tData.courierPos} markers={[{ position: tData.restCoords, color: 'danger', label: '🏪' }, { position: tData.homeCoords, color: 'primary', label: '🏠' }, { position: tData.courierPos, color: 'warning', label: '🚲', pulse: true }]} polyline={[tData.restCoords, tData.courierPos, tData.homeCoords]} height="320px" />
                                      </div>
                                   </div>
                                 )}
@@ -724,113 +701,41 @@ const App = () => {
               </div>
             )}
             
-            {currentView === 'tracking' && activeTrackingId && (
-              <div className="animate-fadeIn">
-                 {(() => {
-                   const activeOrder = orders.find(o => o.id === activeTrackingId);
-                   const tData = getTrackingData(activeOrder);
-                   if (!tData) return <p>Loading...</p>;
-                   return (
-                     <div className="row g-4">
-                        <div className="col-lg-8"><InteractiveMap isDarkMode={isDarkMode} center={tData.courierPos} markers={[{ position: tData.restCoords, color: 'danger', label: '🏪' }, { position: tData.homeCoords, color: 'primary', label: '🏠' }, { position: tData.courierPos, color: 'warning', label: '🚲', pulse: true }]} polyline={[tData.restCoords, tData.courierPos, tData.homeCoords]} /></div>
-                        <div className="col-lg-4">
-                           <div className={`card border-0 z-shadow rounded-5 p-4 h-100 ${isDarkMode ? 'bg-[#1a1a1a] text-white' : 'bg-white'}`}>
-                              <h4 className="fw-black mb-1">Arrival Time</h4><p className="display-6 fw-black text-danger mb-4">12 mins</p>
-                              <div className="d-flex flex-column gap-4">{ORDER_STATUS_STEPS.map((step, idx) => (<div key={step} className={`d-flex gap-3 align-items-center ${ORDER_STATUS_STEPS.indexOf(activeOrder.status) >= idx ? 'opacity-100' : 'opacity-30'}`}><div className={`rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ${activeOrder.status === step ? 'bg-danger scale-110 shadow-lg' : ORDER_STATUS_STEPS.indexOf(activeOrder.status) > idx ? 'bg-success' : 'bg-gray-800'}`} style={{width: '32px', height: '32px'}}><span className="text-white small fw-black">{idx + 1}</span></div><div><p className={`m-0 fw-black small ${activeOrder.status === step ? 'text-danger' : ''}`}>{STATUS_LABELS[step]}</p></div></div>))}</div>
-                              <div className="mt-auto pt-5"><button onClick={() => setIsSupportOpen(true)} className="btn btn-danger w-100 py-3 rounded-4 fw-black">HELP WITH ORDER</button></div>
-                           </div>
-                        </div>
-                     </div>
-                   );
-                 })()}
-              </div>
-            )}
-
             {currentView === 'restaurant' && selectedRestaurant && (
               <div className="animate-fadeIn">
-                 <div className="d-flex align-items-center justify-content-between mb-5"><div><h1 className={`h2 fw-black m-0 ${isDarkMode ? 'text-white' : 'text-dark'}`}>{selectedRestaurant.name}</h1><span className="small text-muted fw-bold">{selectedRestaurant.cuisine}</span></div><button onClick={() => setCurrentView('home')} className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-black">BACK</button></div>
-                 <div className="row g-4">{selectedRestaurant.menu.map(item => (<div key={item.id} className="col-12 col-md-6"><div className={`card border-0 z-shadow rounded-5 p-4 h-100 ${isDarkMode ? 'bg-[#1a1a1a] text-white' : 'bg-white'}`}><div className="d-flex justify-content-between h-100"><div className="flex-grow-1 pe-3"><h6 className="fw-black m-0">{item.name}</h6><p className="text-danger fw-black mb-2">₹{item.price}</p><p className="small text-muted mb-0">{batchEnhancedMenu[item.id] || item.description}</p></div><div className="d-flex flex-column align-items-center gap-2"><img src={item.image} className="w-24 h-24 rounded-4 object-cover shadow-lg" /><button onClick={() => addToCart(item, selectedRestaurant)} className="btn btn-outline-danger btn-sm rounded-3 w-100 fw-black">ADD</button></div></div></div></div>))}</div>
+                 <div className="d-flex align-items-center justify-content-between mb-5"><div><h1 className="h2 fw-black m-0 text-white">{selectedRestaurant.name}</h1><span className="small text-muted fw-bold">{selectedRestaurant.cuisine}</span></div><button onClick={() => setCurrentView('home')} className="btn btn-outline-danger btn-sm rounded-pill px-4 fw-black">BACK</button></div>
+                 <div className="row g-4">{selectedRestaurant.menu.map(item => (<div key={item.id} className="col-12 col-md-6"><div className="card border-0 z-shadow rounded-5 p-4 h-100 bg-[#1a1a1a] text-white border border-gray-800"><div className="d-flex justify-content-between h-100"><div className="flex-grow-1 pe-3"><h6 className="fw-black m-0">{item.name}</h6><p className="text-danger fw-black mb-2">₹{item.price}</p><p className="small text-muted mb-0">{item.description}</p></div><div className="d-flex flex-column align-items-center gap-2"><img src={item.image} className="w-24 h-24 rounded-4 object-cover shadow-lg" /><button onClick={() => addToCart(item, selectedRestaurant)} className="btn btn-outline-danger btn-sm rounded-3 w-100 fw-black">ADD</button></div></div></div></div>))}</div>
               </div>
             )}
 
             {currentView === 'checkout' && (
               <div className="animate-fadeIn">
-                 <div className={`card border-0 z-shadow rounded-5 overflow-hidden max-w-4xl mx-auto ${isDarkMode ? 'bg-[#1a1a1a] text-white' : 'bg-white'}`}>
+                 <div className="card border-0 z-shadow rounded-5 overflow-hidden max-w-4xl mx-auto bg-[#1a1a1a] text-white border border-gray-800">
                     <div className="row g-0">
                        <div className="col-lg-6 p-5 d-flex flex-column h-100">
                           <h2 className="fw-black mb-5">Finalize Order</h2>
-                          {cart.length === 0 ? (<div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center opacity-50 py-10"><CartIcon className="w-16 h-16 mb-4" /><p className="fw-bold tracking-widest uppercase">Your cart is empty</p></div>) : (
-                            <>
-                              <div className="flex-grow-1 overflow-auto no-scrollbar mb-4" style={{maxHeight: '300px'}}>
-                                 {cart.map((i, idx) => (
-                                   <div key={idx} className="d-flex justify-content-between align-items-center py-3 border-bottom border-gray-800/10">
-                                      <div className="d-flex align-items-center gap-3">
-                                         <span className="fw-black text-danger">{i.quantity}x</span>
-                                         <div><p className="m-0 fw-bold small">{i.name}</p><p className="m-0 text-muted x-small uppercase fw-bold tracking-tighter" style={{fontSize: '9px'}}>{i.restaurantName}</p></div>
-                                      </div>
-                                      <span className="fw-black small">₹{i.price * i.quantity}</span>
-                                   </div>
-                                 ))}
-                              </div>
-                              <div className="border-top pt-4 mt-auto">
-                                 <div className="d-flex justify-content-between align-items-center mb-1"><span className="small text-muted fw-bold uppercase tracking-widest">Subtotal</span><span className="small fw-bold">₹{cart.reduce((a,b)=>a+(b.price*b.quantity),0)}</span></div>
-                                 <div className="d-flex justify-content-between align-items-center mb-3"><span className="small text-muted fw-bold uppercase tracking-widest">Delivery Fee</span><span className="small fw-bold">₹40</span></div>
-                                 <div className="d-flex justify-content-between align-items-center h4 fw-black"><span className="tracking-tighter">Total</span><span className="text-danger">₹{cart.reduce((a, b) => a + (b.price * b.quantity), 40)}</span></div>
-                              </div>
-                              <button onClick={async () => {
-                                 const id = Math.random().toString(36).substr(2,6).toUpperCase();
-                                 const total = cart.reduce((a, b) => a + (b.price * b.quantity), 40);
-                                 await db.saveOrder({ 
-                                   id, status: 'preparing', items: [...cart], total, timestamp: Date.now(), estimatedArrival: Date.now() + 30*60*1000, 
-                                   specialInstructions, deliveryAddress: isUsingGps ? 'Live GPS Location' : deliveryAddress 
-                                 });
-                                 setCart([]); setSpecialInstructions(''); setOrders(await db.getOrders()); setCurrentView('history');
-                              }} className="btn btn-danger w-100 py-4 rounded-4 fw-black shadow-lg shadow-red-500/30 mt-4 tracking-tighter">PLACE ORDER</button>
-                            </>
-                          )}
+                          <div className="flex-grow-1 overflow-auto no-scrollbar mb-4" style={{maxHeight: '300px'}}>
+                             {cart.map((i, idx) => (<div key={idx} className="d-flex justify-content-between align-items-center py-3 border-bottom border-gray-800/10"><div><p className="m-0 fw-bold small">{i.quantity}x {i.name}</p></div><span className="fw-black small">₹{i.price * i.quantity}</span></div>))}
+                          </div>
+                          <div className="border-top pt-4 mt-auto">
+                             <div className="d-flex justify-content-between align-items-center h4 fw-black"><span className="tracking-tighter">Total</span><span className="text-danger">₹{cart.reduce((a, b) => a + (b.price * b.quantity), 40)}</span></div>
+                          </div>
+                          <button onClick={async () => {
+                             const id = Math.random().toString(36).substr(2,6).toUpperCase();
+                             const total = cart.reduce((a, b) => a + (b.price * b.quantity), 40);
+                             await db.saveOrder({ id, status: 'preparing', items: [...cart], total, timestamp: Date.now(), estimatedArrival: Date.now() + 30*60*1000, specialInstructions, deliveryAddress: isUsingGps ? 'Live GPS Location' : deliveryAddress });
+                             setCart([]); setOrders(await db.getOrders()); setCurrentView('history');
+                          }} className="btn btn-danger w-100 py-4 rounded-4 fw-black shadow-lg shadow-red-500/30 mt-4 tracking-tighter">PLACE ORDER</button>
                        </div>
-                       <div className={`col-lg-6 ${isDarkMode ? 'bg-[#151515]' : 'bg-gray-50'} p-5 border-start border-gray-800/10`}>
+                       <div className="col-lg-6 bg-[#151515] p-5 border-start border-gray-800/10">
                           <div className="d-flex flex-column h-100">
                              <h5 className="fw-black mb-4 d-flex align-items-center gap-2"><MapIcon className="text-danger" /> Delivery Destination</h5>
-                             
                              <div className="position-relative mb-4 flex-grow-1">
-                                <InteractiveMap isDarkMode={isDarkMode} center={checkoutMapCenter} markers={[{ position: checkoutMapCenter, color: 'danger', label: '📍', pulse: true }]} height="250px" zoom={isUsingGps ? 17 : 16} />
-                                <div className="position-absolute bottom-4 right-4" style={{ zIndex: 500 }}>
-                                   <button onClick={() => setIsUsingGps(!isUsingGps)} className={`btn rounded-circle p-3 shadow-lg transition-all ${isUsingGps ? 'bg-danger text-white' : 'bg-white text-dark'}`} title={isUsingGps ? 'Using Live GPS' : 'Switched to Manual Location'}>
-                                      <GpsIcon className={isUsingGps ? 'animate-pulse' : ''} />
-                                   </button>
-                                </div>
+                                <InteractiveMap center={checkoutMapCenter} markers={[{ position: checkoutMapCenter, color: 'danger', label: '📍', pulse: true }]} height="250px" zoom={17} />
+                                <div className="position-absolute bottom-4 right-4" style={{ zIndex: 500 }}><button onClick={() => setIsUsingGps(!isUsingGps)} className={`btn rounded-circle p-3 shadow-lg ${isUsingGps ? 'bg-danger text-white' : 'bg-white text-dark'}`}><GpsIcon /></button></div>
                              </div>
-
-                             <div className="d-flex flex-column gap-3">
-                                <div className="position-relative">
-                                   <label className="x-small fw-black text-muted uppercase tracking-widest mb-1 d-block" style={{fontSize: '9px'}}>Delivery Address</label>
-                                   <input 
-                                      type="text" 
-                                      className={`form-control rounded-4 py-3 px-4 small fw-bold shadow-none border-2 transition-all ${isDarkMode ? 'bg-[#0f0f0f] border-gray-800 text-white focus:border-danger' : 'bg-white border-gray-100 focus:border-danger'} ${isUsingGps ? 'opacity-50 pointer-events-none' : ''}`}
-                                      placeholder={isUsingGps ? "Using Precise GPS Location" : "House #, Street, Landmark..."} 
-                                      value={deliveryAddress}
-                                      onChange={(e) => setDeliveryAddress(e.target.value)}
-                                   />
-                                   {!isUsingGps && (
-                                     <div className="position-absolute end-4 top-10 transform -translate-y-1/2">
-                                        <div className="w-2 h-2 bg-danger rounded-circle animate-ping"></div>
-                                     </div>
-                                   )}
-                                </div>
-
-                                <div>
-                                   <label className="x-small fw-black text-muted uppercase tracking-widest mb-1 d-block" style={{fontSize: '9px'}}>Driver Instructions</label>
-                                   <textarea 
-                                      className={`form-control rounded-4 p-3 small fw-bold shadow-none border-2 transition-all ${isDarkMode ? 'bg-[#0f0f0f] border-gray-800 text-white focus:border-danger' : 'bg-white border-gray-100 focus:border-danger'}`} 
-                                      placeholder="e.g. Call upon arrival, Leave at the door..." 
-                                      rows="3" 
-                                      style={{ resize: 'none' }} 
-                                      value={specialInstructions} 
-                                      onChange={(e) => setSpecialInstructions(e.target.value)} 
-                                   />
-                                </div>
-                             </div>
+                             <input type="text" className="form-control rounded-4 py-3 px-4 small fw-bold bg-[#0f0f0f] border-gray-800 text-white shadow-none mb-3" placeholder="Address..." value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} disabled={isUsingGps} />
+                             <textarea className="form-control rounded-4 p-3 small fw-bold bg-[#0f0f0f] border-gray-800 text-white shadow-none" placeholder="Instructions..." rows="2" value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} />
                           </div>
                        </div>
                     </div>
@@ -843,8 +748,8 @@ const App = () => {
 
       {currentUser.role !== 'admin' && (
         <>
-          <button onClick={() => setIsSupportOpen(true)} className="fixed bottom-8 right-8 btn btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center shadow-2xl transition-all" style={{ width: '64px', height: '64px', zIndex: 1000 }}><HeadsetIcon className="w-8 h-8" /></button>
-          <LiveSupportPanel isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} isDarkMode={isDarkMode} />
+          <button onClick={() => setIsSupportOpen(true)} className="fixed bottom-8 right-8 btn btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center shadow-2xl transition-all" style={{ width: '64px', height: '64px', zIndex: 1000 }}>🎙️</button>
+          <LiveSupportPanel isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
         </>
       )}
     </div>
