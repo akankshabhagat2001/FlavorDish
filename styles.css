@@ -2,21 +2,25 @@
 :root {
     --primary: #ff2d2d;
     --bg-dark: #050505;
-    --card-dark: #111111;
+    --card-white: #ffffff;
     --border-white: rgba(255, 255, 255, 0.12);
     --accent-gold: #ffc107;
-    --text-main: #f8f8f8;
-    --text-secondary: rgba(255, 255, 255, 0.75);
-    --text-muted: rgba(255, 255, 255, 0.55);
+    --text-on-dark: #ff2d2d;
+    --text-on-light: #0a0a0a;
 }
 
 body { 
   font-family: 'Inter', sans-serif; 
   background-color: var(--bg-dark);
-  color: var(--text-main);
+  color: var(--text-on-dark);
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+/* Headings and Main Text */
+h1, h2, h3, h4, h5, h6, .text-hero {
+    color: var(--text-on-dark) !important;
 }
 
 /* Smooth Scroll */
@@ -30,23 +34,28 @@ html { scroll-behavior: smooth; }
 
 /* Cinematic Elements */
 .glass-panel {
-    background: rgba(15, 15, 15, 0.85); 
+    background: rgba(15, 15, 15, 0.95); 
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
     border: 1px solid var(--border-white);
 }
 
 .glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    border: 1px solid var(--border-white);
+    background: var(--card-white) !important;
+    color: var(--text-on-light) !important;
+    border: 1px solid rgba(0,0,0,0.05);
     transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
+
+/* Ensure children inside white cards have dark text */
+.glass-card p, .glass-card span:not(.badge), .glass-card h1, .glass-card h2, .glass-card h3, .glass-card h4, .glass-card h5, .glass-card h6 {
+    color: var(--text-on-light) !important;
+}
+
 .glass-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 45, 45, 0.4);
     transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    box-shadow: 0 20px 40px rgba(255, 45, 45, 0.15);
 }
 
 /* Animations */
@@ -86,12 +95,11 @@ html { scroll-behavior: smooth; }
 .text-hero {
     letter-spacing: -0.06em;
     line-height: 0.85;
-    color: var(--text-main);
 }
 
 .btn-obsidian {
     background: var(--primary);
-    color: white;
+    color: white !important;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.2em;

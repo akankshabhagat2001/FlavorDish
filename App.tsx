@@ -52,7 +52,7 @@ const Badge: React.FC<{ children: React.ReactNode; color?: string; pulse?: boole
   const styles: any = {
     primary: "bg-[#ff2d2d] text-white",
     gold: "bg-[#ffc107] text-black",
-    ghost: "bg-white/10 text-white backdrop-blur-md border border-white/10",
+    ghost: "bg-[#050505]/10 text-[#050505] backdrop-blur-md border border-[#050505]/10",
   };
   return (
     <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] relative ${styles[color] || styles.primary}`}>
@@ -190,11 +190,11 @@ const LiveSupportPanel = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           </div>
           <button className="text-white hover:scale-110 transition-transform" onClick={onClose}><XIcon /></button>
         </div>
-        <div ref={scrollRef} className="flex-grow p-8 overflow-auto no-scrollbar flex flex-col gap-6">
+        <div ref={scrollRef} className="flex-grow p-8 overflow-auto no-scrollbar flex flex-col gap-6 bg-[#111]">
           {transcript.length === 0 && (
             <div className="text-center py-20 opacity-50 flex flex-col items-center gap-4">
               <SparklesIcon className="w-16 h-16 text-[#ff2d2d]" />
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-white">Tell me what you're craving...</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ff2d2d]">Tell me what you're craving...</p>
             </div>
           )}
           {transcript.map((msg, i) => (
@@ -203,13 +203,13 @@ const LiveSupportPanel = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             </div>
           ))}
         </div>
-        <div className="p-8 border-t border-white/10">
+        <div className="p-8 border-t border-white/10 bg-[#111]">
           <div className="flex items-center gap-6">
              <div className="flex-grow">
                 <div className="h-1 rounded-full overflow-hidden bg-white/10">
                    <div className={`h-full bg-[#ff2d2d] transition-all duration-300 ${status === 'active' ? 'w-full' : 'w-0'}`} />
                 </div>
-                <p className="text-[9px] m-0 mt-3 opacity-60 font-black uppercase tracking-widest text-white">{status === 'active' ? 'Listening...' : 'Connecting to Gemini Cloud...'}</p>
+                <p className="text-[9px] m-0 mt-3 opacity-60 font-black uppercase tracking-widest text-[#ff2d2d]">{status === 'active' ? 'Listening...' : 'Connecting to Gemini Cloud...'}</p>
              </div>
              <div className={`rounded-full p-5 ${status === 'active' ? 'bg-[#ff2d2d] text-white shadow-[0_0_30px_rgba(255,45,45,0.6)]' : 'bg-white/10 text-white/40'}`}>
                 <div className="w-8 h-8 flex items-center justify-center text-2xl">🎙️</div>
@@ -229,21 +229,16 @@ const RestaurantCard: React.FC<{ restaurant: Restaurant; onClick: () => void }> 
         className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 group-hover:brightness-110" 
         alt={restaurant.name} 
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-90" />
+      <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-30" />
       <div className="absolute top-6 left-6 flex flex-col gap-2 items-start">
          <Badge color="ghost">{restaurant.cuisine.split('•')[0]}</Badge>
          {restaurant.rating > 4.7 && <Badge color="gold">ELITE CHOICE</Badge>}
       </div>
-      <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-         <div>
-            <h4 className="text-3xl font-black text-white tracking-tighter leading-none mb-1 shadow-sm">{restaurant.name}</h4>
-            <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest">
-               <ClockIcon className="w-3 h-3 text-white" /> {restaurant.deliveryTime}
-            </div>
-         </div>
-         <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center border border-white/30 group-hover:bg-[#ff2d2d] group-hover:border-[#ff2d2d] transition-all">
-            <PlusIcon className="w-6 h-6 text-white" />
-         </div>
+    </div>
+    <div className="p-6">
+      <h4 className="text-3xl font-black tracking-tighter leading-none mb-1 text-[#050505]">{restaurant.name}</h4>
+      <div className="flex items-center gap-2 text-[10px] font-black text-[#050505]/60 uppercase tracking-widest mt-2">
+         <ClockIcon className="w-3 h-3 text-[#ff2d2d]" /> {restaurant.deliveryTime}
       </div>
     </div>
   </GlassCard>
@@ -414,7 +409,7 @@ const App = () => {
      setCart(prev => {
         const existing = prev.find(i => i.id === item.id);
         if (existing) return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
-        return [...prev, { ...item, quantity: 1, restaurantName: restaurant.name }];
+        return [...prev, { ...item, quantity: 1, restaurantId: restaurant.id, restaurantName: restaurant.name }];
      });
   };
 
@@ -431,18 +426,18 @@ const App = () => {
     return (
       <div className="space-y-12 animate-reveal">
          <div className="flex justify-between items-end">
-            <h1 className="text-6xl font-black tracking-tighter text-hero text-white">COMMAND <br/><span className="text-[#ff2d2d]">CENTER.</span></h1>
+            <h1 className="text-6xl font-black tracking-tighter text-hero">COMMAND <br/><span className="text-[#ff2d2d]">CENTER.</span></h1>
             <Badge color="primary">V.3.1 OPS CORE</Badge>
          </div>
 
          <div className="bento-grid">
-            <GlassCard className="col-span-full md:col-span-2 flex flex-col justify-between h-80 relative overflow-hidden border-white/20">
+            <GlassCard className="col-span-full md:col-span-2 flex flex-col justify-between h-80 relative overflow-hidden">
                <div className="relative z-10">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/70 mb-2">Aggregate Revenue</p>
-                  <h3 className="text-6xl font-black text-white">₹{stats.revenue.toLocaleString()}</h3>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#050505]/70 mb-2">Aggregate Revenue</p>
+                  <h3 className="text-6xl font-black text-[#ff2d2d]">₹{stats.revenue.toLocaleString()}</h3>
                   <div className="mt-4"><Badge color="gold">+12% vs LY</Badge></div>
                </div>
-               <div className="absolute inset-0 z-0 opacity-30 mt-10">
+               <div className="absolute inset-0 z-0 opacity-10 mt-10">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={stats.data}>
                        <Area type="monotone" dataKey="val" stroke="#ff2d2d" strokeWidth={4} fill="#ff2d2d" fillOpacity={0.4} />
@@ -451,64 +446,29 @@ const App = () => {
                </div>
             </GlassCard>
 
-            <GlassCard className="flex flex-col items-center justify-center text-center gap-4 border-[#ff2d2d]/30">
-               <PackageIcon className="w-12 h-12 text-[#ff2d2d] animate-glow rounded-full p-2" />
+            <GlassCard className="flex flex-col items-center justify-center text-center gap-4">
+               <div className="bg-[#ff2d2d] rounded-full p-4 shadow-lg shadow-red-500/30">
+                  <PackageIcon className="w-8 h-8 text-white" />
+               </div>
                <div>
-                  <h4 className="text-5xl font-black text-white">{stats.active}</h4>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/70 mt-1">Live Fleet Nodes</p>
+                  <h4 className="text-5xl font-black text-[#050505]">{stats.active}</h4>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#050505]/70 mt-1">Live Fleet Nodes</p>
                </div>
             </GlassCard>
 
-            <GlassCard className="flex flex-col justify-center gap-2 border-white/20">
+            <GlassCard className="flex flex-col justify-center gap-2">
                <div className="flex justify-between items-center mb-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Real-Time Pulse</p>
-                  <RefreshIcon className="w-4 h-4 text-white/40" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#050505]/70">Real-Time Pulse</p>
+                  <RefreshIcon className="w-4 h-4 text-[#ff2d2d]" />
                </div>
                {orders.slice(0, 3).map(o => (
-                  <div key={o.id} className="flex justify-between items-center py-3 border-b border-white/10 last:border-0">
-                     <span className="text-xs font-black text-white">#{o.id}</span>
-                     <Badge color="ghost">{o.status}</Badge>
+                  <div key={o.id} className="flex justify-between items-center py-3 border-b border-[#050505]/10 last:border-0">
+                     <span className="text-xs font-black text-[#050505]">#{o.id}</span>
+                     <Badge color="primary">{o.status}</Badge>
                   </div>
                ))}
             </GlassCard>
          </div>
-
-         <GlassCard className="p-0 overflow-hidden border-white/20">
-            <div className="p-8 border-b border-white/10 flex justify-between items-center bg-white/5">
-               <h5 className="text-xl font-black text-white">Fleet Protocol Log</h5>
-               <button className="text-[10px] font-black uppercase tracking-widest text-[#ff2d2d] hover:brightness-125 transition-all">Full Audit Log →</button>
-            </div>
-            <div className="overflow-x-auto">
-               <table className="w-full text-left">
-                  <thead>
-                     <tr className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/10">
-                        <th className="py-6 px-8">TRANS ID</th>
-                        <th className="py-6 px-8">STATUS MATRIX</th>
-                        <th className="py-6 px-8 text-right">ACTION</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     {orders.map(o => (
-                        <tr key={o.id} className="group hover:bg-white/10 transition-colors">
-                           <td className="py-8 px-8 font-black text-[#ff2d2d] text-lg">#{o.id}</td>
-                           <td className="py-8 px-8">
-                              <Badge color={o.status === 'delivered' ? 'gold' : 'primary'}>{o.status.replace('_', ' ')}</Badge>
-                           </td>
-                           <td className="py-8 px-8 text-right">
-                              <select 
-                                value={o.status} 
-                                onChange={(e) => db.updateOrderStatus(o.id, e.target.value as any).then(setOrders)}
-                                className="bg-[#1a1a1a] border border-white/20 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-[#ff2d2d]"
-                              >
-                                {['preparing', 'picked_up', 'delivering', 'delivered'].map(s => <option key={s} value={s}>{s}</option>)}
-                              </select>
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-            </div>
-         </GlassCard>
       </div>
     );
   };
@@ -518,26 +478,26 @@ const App = () => {
        <div className="absolute inset-0 opacity-20 pointer-events-none scale-110 blur-xl">
           <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="w-full h-full object-cover" />
        </div>
-       <GlassCard className="w-full max-w-xl p-16 animate-reveal z-10 border-white/20 shadow-2xl rounded-[4rem] bg-[#0f0f0f]">
+       <div className="w-full max-w-xl p-16 animate-reveal z-10 glass-panel rounded-[4rem] bg-[#0f0f0f]">
           <div className="text-center mb-16">
              <div className="bg-[#ff2d2d]/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 animate-soft-pulse border border-[#ff2d2d]/40">
                 <SparklesIcon className="w-12 h-12 text-[#ff2d2d]" />
              </div>
-             <h2 className="text-5xl font-black tracking-tighter mb-4 text-white">FLAVORDISH.</h2>
+             <h2 className="text-5xl font-black tracking-tighter mb-4 text-[#ff2d2d]">FLAVORDISH.</h2>
              <p className="text-white/60 text-xs font-black uppercase tracking-[0.4em]">Establish Secure Link</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-6">
              <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/70 ml-4">Credential ID</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#ff2d2d] ml-4">Credential ID</p>
                 <input type="text" className="w-full bg-white/10 border border-white/20 rounded-3xl py-5 px-8 focus:border-[#ff2d2d] outline-none text-white transition-all text-lg font-bold" placeholder="ID (user / admin)" onChange={e => setAuthForm({...authForm, username: e.target.value})} required />
              </div>
              <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/70 ml-4">Passphrase</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#ff2d2d] ml-4">Passphrase</p>
                 <input type="password" className="w-full bg-white/10 border border-white/20 rounded-3xl py-5 px-8 focus:border-[#ff2d2d] outline-none text-white transition-all text-lg font-bold" placeholder="Code (pass / admin)" onChange={e => setAuthForm({...authForm, password: e.target.value})} required />
              </div>
              <button type="submit" disabled={isAuthLoading} className="btn-obsidian w-full mt-6 shadow-[0_0_50px_rgba(255,45,45,0.4)] h-20 text-xl">Connect to Fleet</button>
           </form>
-       </GlassCard>
+       </div>
     </div>
   );
 
@@ -549,7 +509,7 @@ const App = () => {
              <div className="bg-[#ff2d2d] p-2.5 rounded-2xl group-hover:rotate-12 transition-transform shadow-lg shadow-red-500/30">
                 <SparklesIcon className="w-7 h-7 text-white" />
              </div>
-             <span className="text-3xl font-black tracking-tighter text-white">FLAVORDISH.</span>
+             <span className="text-3xl font-black tracking-tighter text-[#ff2d2d]">FLAVORDISH.</span>
           </div>
           <div className="flex items-center gap-12 text-[11px] font-black uppercase tracking-widest">
             {currentUser.role === 'admin' ? (
@@ -562,12 +522,12 @@ const App = () => {
                 <button onClick={() => setCurrentView('home')} className={currentView === 'home' ? 'text-[#ff2d2d]' : 'text-white/70 hover:text-white transition-colors'}>EXPLORE</button>
                 <button onClick={() => setCurrentView('history')} className={currentView === 'history' ? 'text-[#ff2d2d]' : 'text-white/70 hover:text-white transition-colors'}>VAULT</button>
                 <div onClick={() => setCurrentView('cart')} className="relative cursor-pointer hover:scale-110 transition-transform">
-                   <CartIcon className="w-6 h-6 text-white" />
+                   <CartIcon className="w-6 h-6 text-[#ff2d2d]" />
                    {cart.length > 0 && <span className="absolute -top-1.5 -right-1.5 bg-[#ff2d2d] w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-[#050505] text-white">{cart.length}</span>}
                 </div>
               </>
             )}
-            <button onClick={() => { db.logout(); setCurrentUser(null); }} className="px-8 py-3 rounded-full border border-white/20 hover:bg-[#ff2d2d] hover:border-[#ff2d2d] transition-all text-white font-black">EXIT</button>
+            <button onClick={() => { db.logout(); setCurrentUser(null); }} className="px-8 py-3 rounded-full border border-white/20 hover:bg-[#ff2d2d] hover:border-[#ff2d2d] transition-all text-[#ff2d2d] font-black">EXIT</button>
           </div>
         </div>
       </nav>
@@ -579,8 +539,8 @@ const App = () => {
                 <img src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2000" className="w-full h-full object-cover scale-105 opacity-70" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent flex flex-col items-center justify-center text-center p-12">
                    <Badge color="gold">ELITE AMDAVADI DISCOVERY</Badge>
-                   <h1 className="text-8xl font-black tracking-tighter mt-8 mb-6 text-white shadow-xl">FEAST ON <br/><span className="text-[#ff2d2d]">OBSIDIAN.</span></h1>
-                   <p className="max-w-xl text-white/80 font-bold text-sm uppercase tracking-[0.4em] leading-relaxed">Neural Logistics • AI-Enhanced Discovery • Gourmet Protocol</p>
+                   <h1 className="text-8xl font-black tracking-tighter mt-8 mb-6 text-[#ff2d2d] drop-shadow-2xl">FEAST ON <br/>OBSIDIAN.</h1>
+                   <p className="max-w-xl text-white font-bold text-sm uppercase tracking-[0.4em] leading-relaxed">Neural Logistics • AI-Enhanced Discovery • Gourmet Protocol</p>
                    <div className="w-full max-w-2xl mt-16 relative group">
                       <div className="absolute inset-0 bg-[#ff2d2d]/30 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                       <input type="text" className="w-full glass-panel py-7 px-12 rounded-full border-white/20 focus:ring-4 focus:ring-[#ff2d2d]/50 outline-none text-white text-2xl font-bold relative z-10" placeholder="WHAT'S YOUR MOOD TODAY?" />
@@ -592,7 +552,7 @@ const App = () => {
                 <div className="flex justify-between items-center mb-12">
                    <div className="flex items-center gap-6">
                       <div className="h-[2px] w-20 bg-[#ff2d2d]" />
-                      <h2 className="text-5xl font-black tracking-tighter text-white">THE FLEET.</h2>
+                      <h2 className="text-5xl font-black tracking-tighter text-[#ff2d2d]">THE FLEET.</h2>
                    </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -613,28 +573,24 @@ const App = () => {
                    <div>
                       <div className="flex gap-4 mb-6">
                          <Badge color="primary">{mgmtRestaurant.cuisine}</Badge>
-                         <Badge color="ghost">PROCESSED IN 30M</Badge>
+                         <Badge color="gold">PROCESSED IN 30M</Badge>
                       </div>
-                      <h1 className="text-8xl font-black tracking-tighter leading-none text-white">{mgmtRestaurant.name}</h1>
+                      <h1 className="text-8xl font-black tracking-tighter leading-none text-[#ff2d2d]">{mgmtRestaurant.name}</h1>
                    </div>
-                   <button onClick={() => setCurrentView('home')} className="glass-button px-10 py-4 rounded-full font-black text-xs uppercase tracking-widest border border-white/30 text-white hover:bg-white hover:text-black transition-all">EXIT TO FLEET</button>
+                   <button onClick={() => setCurrentView('home')} className="btn-obsidian px-10 py-4 rounded-full font-black text-xs uppercase tracking-widest transition-all">EXIT TO FLEET</button>
                 </div>
              </div>
 
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                 {mgmtRestaurant.menu.map(item => (
-                  <GlassCard key={item.id} className="group p-8 flex items-center gap-10 hover:border-[#ff2d2d]/50 shadow-2xl relative overflow-hidden border-white/20">
-                     {isEnhancing && !enhancedDescriptions[item.id] && (
-                        <div className="absolute top-4 right-8"><Badge color="gold">AI STORYTELLING...</Badge></div>
-                     )}
-                     <div className="w-48 h-48 rounded-[3rem] overflow-hidden flex-shrink-0 relative border border-white/10">
+                  <GlassCard key={item.id} className="group p-8 flex items-center gap-10 hover:border-[#ff2d2d]/50 shadow-2xl relative overflow-hidden">
+                     <div className="w-48 h-48 rounded-[3rem] overflow-hidden flex-shrink-0 relative border border-[#050505]/10">
                         <img src={item.image} className="w-full h-full object-cover transition-all duration-1000 scale-110 group-hover:scale-125" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                        <span className="absolute bottom-6 left-1/2 -translate-x-1/2 font-black text-3xl tracking-tighter text-white">₹{item.price}</span>
+                        <span className="absolute bottom-6 left-1/2 -translate-x-1/2 font-black text-3xl tracking-tighter text-[#ff2d2d]">₹{item.price}</span>
                      </div>
                      <div className="flex-grow">
-                        <h6 className="text-3xl font-black text-white tracking-tighter mb-4">{item.name}</h6>
-                        <p className="text-base text-white/80 font-medium leading-relaxed mb-10 transition-opacity duration-1000">
+                        <h6 className="text-3xl font-black text-[#050505] tracking-tighter mb-4">{item.name}</h6>
+                        <p className="text-base text-[#050505]/70 font-medium leading-relaxed mb-10">
                            {enhancedDescriptions[item.id] || item.description}
                         </p>
                         <button onClick={() => addToCart(item, mgmtRestaurant!)} className="px-10 py-4 rounded-full border-2 border-[#ff2d2d] text-[#ff2d2d] font-black text-[12px] uppercase tracking-widest hover:bg-[#ff2d2d] hover:text-white transition-all shadow-lg hover:shadow-red-500/30">ACQUIRE DISH</button>
@@ -647,44 +603,41 @@ const App = () => {
 
         {currentView === 'cart' && (
           <div className="animate-reveal max-w-5xl mx-auto">
-             <div className="glass-panel rounded-[5rem] p-20 border-white/20 shadow-[0_40px_100px_rgba(0,0,0,0.9)] bg-[#0f0f0f]">
+             <div className="glass-card rounded-[5rem] p-20 border-white/20 shadow-[0_40px_100px_rgba(0,0,0,0.9)] !bg-white">
                 <div className="flex items-center gap-8 mb-20">
                    <div className="bg-[#ff2d2d] p-6 rounded-[2rem] shadow-2xl shadow-red-500/50">
                       <CartIcon className="w-14 h-14 text-white" />
                    </div>
-                   <h2 className="text-7xl font-black tracking-tighter text-white">THE <br/><span className="text-[#ff2d2d]">BASKET.</span></h2>
+                   <h2 className="text-7xl font-black tracking-tighter text-[#050505]">THE <br/><span className="text-[#ff2d2d]">BASKET.</span></h2>
                 </div>
 
                 {cart.length === 0 ? (
                   <div className="text-center py-32 opacity-40 flex flex-col items-center">
-                     <PackageIcon className="w-32 h-32 mb-10 text-white" />
-                     <p className="font-black uppercase tracking-[0.8em] text-sm text-white">Target inventory offline</p>
+                     <PackageIcon className="w-32 h-32 mb-10 text-[#050505]" />
+                     <p className="font-black uppercase tracking-[0.8em] text-sm text-[#050505]">Target inventory offline</p>
                   </div>
                 ) : (
                   <div className="space-y-12">
-                     <div className="space-y-6 max-h-[450px] overflow-auto pr-10 no-scrollbar">
-                        {cart.map((item, i) => (
-                          <div key={i} className="flex items-center justify-between py-10 border-b border-white/10 last:border-0 group">
-                             <div className="flex items-center gap-10">
-                                <img src={item.image} className="w-32 h-32 rounded-[2.5rem] object-cover border-2 border-white/20 transition-all duration-700 shadow-xl" />
-                                <div>
-                                   <p className="text-4xl font-black text-white tracking-tighter leading-none mb-3">{item.name}</p>
-                                   <p className="text-sm text-white/70 uppercase font-black tracking-widest">{item.restaurantName} • QTY: {item.quantity}</p>
-                                </div>
-                             </div>
-                             <div className="text-right flex flex-col items-end">
-                                <span className="text-4xl font-black text-[#ff2d2d] tracking-tighter">₹{item.price * item.quantity}</span>
-                                <button onClick={() => setCart(cart.filter((_, idx) => idx !== i))} className="text-[11px] font-black uppercase tracking-widest text-[#ff2d2d] hover:brightness-125 mt-4 transition-colors">Discard Cycle</button>
-                             </div>
-                          </div>
-                        ))}
-                     </div>
-                     <div className="pt-16 border-t border-white/20 flex justify-between items-end">
-                        <div className="space-y-2">
-                           <p className="text-white/60 font-black uppercase tracking-widest text-xs">Pre-Allocation Review</p>
-                           <h3 className="text-8xl font-black text-white tracking-tighter leading-none">₹{(cart.reduce((a, b) => a + (b.price * b.quantity), 0) + 40).toLocaleString()}</h3>
+                     {cart.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between py-10 border-b border-[#050505]/10 last:border-0 group">
+                           <div className="flex items-center gap-10">
+                              <img src={item.image} className="w-32 h-32 rounded-[2.5rem] object-cover border-2 border-[#050505]/10 transition-all duration-700 shadow-xl" />
+                              <div>
+                                 <p className="text-4xl font-black text-[#050505] tracking-tighter leading-none mb-3">{item.name}</p>
+                                 <p className="text-sm text-[#050505]/70 uppercase font-black tracking-widest">{item.restaurantName} • QTY: {item.quantity}</p>
+                              </div>
+                           </div>
+                           <div className="text-right">
+                              <span className="text-4xl font-black text-[#ff2d2d] tracking-tighter">₹{item.price * item.quantity}</span>
+                           </div>
                         </div>
-                        <button onClick={() => setCurrentView('checkout')} className="btn-obsidian h-28 px-20 text-3xl shadow-[0_20px_60px_rgba(255,45,45,0.5)]">CONTINUE TO LOGISTICS</button>
+                     ))}
+                     <div className="pt-16 border-t border-[#050505]/10 flex justify-between items-end">
+                        <div className="space-y-2">
+                           <p className="text-[#050505]/40 font-black uppercase tracking-widest text-xs">Pre-Allocation Review</p>
+                           <h3 className="text-8xl font-black text-[#050505] tracking-tighter leading-none">₹{(cart.reduce((a, b) => a + (b.price * b.quantity), 0) + 40).toLocaleString()}</h3>
+                        </div>
+                        <button onClick={() => setCurrentView('checkout')} className="btn-obsidian h-28 px-20 text-3xl">CONTINUE TO LOGISTICS</button>
                      </div>
                   </div>
                 )}
@@ -692,143 +645,45 @@ const App = () => {
           </div>
         )}
 
-        {currentView === 'checkout' && (
-          <div className="animate-reveal max-w-6xl mx-auto">
-             <div className="glass-panel rounded-[5rem] overflow-hidden border-white/20 shadow-[0_40px_100px_rgba(0,0,0,0.9)] bg-[#0a0a0a]">
-                <div className="grid grid-cols-1 lg:grid-cols-2">
-                   <div className="p-16 border-e border-white/10 bg-[#111]/40">
-                      <div className="flex items-center gap-4 mb-12">
-                          <PackageIcon className="text-[#ff2d2d] w-12 h-12" />
-                          <h2 className="text-5xl font-black tracking-tighter uppercase text-white">Order Summary</h2>
-                      </div>
-                      
-                      <div className="space-y-8 mb-16 max-h-[300px] overflow-auto pr-6 no-scrollbar">
-                         {cart.map((item, idx) => (
-                           <div key={idx} className="flex justify-between items-start border-b border-white/10 pb-6 last:border-0">
-                              <div>
-                                 <p className="text-2xl font-black text-white leading-none tracking-tight">{item.name}</p>
-                                 <p className="text-xs font-black uppercase tracking-widest text-white/70 mt-3">{item.restaurantName} • QTY: {item.quantity}</p>
-                              </div>
-                              <span className="text-2xl font-black text-white tracking-tighter">₹{item.price * item.quantity}</span>
-                           </div>
-                         ))}
-                      </div>
-
-                      <div className="space-y-6 pt-10 border-t border-white/20 border-dashed">
-                         <div className="flex justify-between items-center text-white/80 font-black uppercase tracking-widest text-sm">
-                            <span>SUBTOTAL LOGISTICS</span>
-                            <span className="text-white text-2xl tracking-tighter">₹{cart.reduce((acc, item) => acc + (item.price * item.quantity), 0)}</span>
-                         </div>
-                         <div className="flex justify-between items-center text-white/80 font-black uppercase tracking-widest text-sm">
-                            <span>DELIVERY PROTOCOL FEE</span>
-                            <span className="text-white text-2xl tracking-tighter">₹40</span>
-                         </div>
-                         <div className="flex justify-between items-center pt-8 border-t border-white/30">
-                            <span className="text-[#ff2d2d] font-black uppercase tracking-[0.2em] text-lg">TOTAL ALLOCATION</span>
-                            <span className="text-7xl font-black text-white tracking-tighter">₹{(cart.reduce((a, b) => a + (b.price * b.quantity), 40)).toLocaleString()}</span>
-                         </div>
-                      </div>
-
-                      <button onClick={handlePlaceOrder} className="btn-obsidian w-full h-28 mt-16 text-2xl shadow-[0_20px_50px_rgba(255,45,45,0.5)]">INITIATE PROCUREMENT</button>
-                   </div>
-
-                   <div className="p-16 bg-[#050505]/80 flex flex-col">
-                      <div className="flex items-center justify-between mb-12">
-                         <h5 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3 text-white">
-                            <MapIcon className="text-[#ff2d2d] w-8 h-8" /> Delivery Protocol
-                         </h5>
-                         <button onClick={() => setIsUsingGps(!isUsingGps)} className={`px-6 py-3 rounded-full border-2 border-white/20 text-[10px] font-black uppercase tracking-widest transition-all ${isUsingGps ? 'bg-[#ff2d2d] border-[#ff2d2d] text-white' : 'hover:bg-white/10 text-white'}`}>
-                            {isUsingGps ? 'Live GPS Active' : 'Manual Signal'}
-                         </button>
-                      </div>
-
-                      <div className="flex-grow rounded-[3rem] overflow-hidden border-2 border-white/10 relative mb-12 shadow-inner">
-                         <InteractiveMap 
-                           center={isUsingGps ? [userCoords.latitude, userCoords.longitude] : [23.0225, 72.5714]} 
-                           markers={[{ position: isUsingGps ? [userCoords.latitude, userCoords.longitude] : [23.0225, 72.5714], color: 'red-500', label: '🏠' }]} 
-                           height="100%" 
-                           zoom={16} 
-                         />
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
-                      </div>
-
-                      <div className="space-y-6">
-                         <div className="relative">
-                           <input 
-                             type="text" 
-                             className={`w-full bg-white/10 border-2 rounded-3xl py-7 px-10 focus:border-[#ff2d2d] outline-none text-white transition-all text-lg font-bold ${addressError ? 'border-[#ff2d2d]' : 'border-white/10'}`}
-                             placeholder="ENTRY PROTOCOL / ADDRESS..." 
-                             value={deliveryAddress}
-                             onChange={(e) => handleAddressChange(e.target.value)}
-                             disabled={isUsingGps}
-                           />
-                           {addressError && !isUsingGps && (
-                             <div className="absolute -bottom-8 left-6 flex items-center gap-2 text-[#ff2d2d] font-black text-[10px] uppercase tracking-widest animate-reveal">
-                                <WarningIcon /> {addressError}
-                             </div>
-                           )}
-                         </div>
-                         <textarea 
-                           className="w-full bg-white/10 border-2 border-white/10 rounded-[2.5rem] py-7 px-10 focus:border-[#ff2d2d] outline-none text-white transition-all text-lg font-bold no-scrollbar mt-4" 
-                           placeholder="SPECIAL LOGISTICS INSTRUCTIONS..." 
-                           rows={3}
-                         />
-                      </div>
-                   </div>
-                </div>
-             </div>
-          </div>
-        )}
-
         {currentView === 'history' && (
           <div className="animate-reveal space-y-16 max-w-5xl mx-auto">
              <div className="flex justify-between items-end">
-                <h2 className="text-7xl font-black tracking-tighter text-white">ORDER <br/><span className="text-[#ff2d2d]">VAULT.</span></h2>
-                <Badge color="ghost">ENCRYPTED HISTORY</Badge>
+                <h2 className="text-7xl font-black tracking-tighter text-[#ff2d2d]">ORDER <br/>VAULT.</h2>
+                <Badge color="primary">ENCRYPTED HISTORY</Badge>
              </div>
              {orders.map(o => {
                 const tracking = getOrderTrackingData(o);
                 return (
-                  <GlassCard key={o.id} className={`p-0 overflow-hidden group border-white/20 hover:border-[#ff2d2d]/60 transition-all duration-700 bg-[#0f0f0f] ${tracking.isActive ? 'ring-2 ring-red-500/30' : ''}`}>
+                  <GlassCard key={o.id} className="p-0 overflow-hidden !bg-white">
                       <div className="p-12 flex justify-between items-center">
                           <div className="flex gap-10 items-center">
-                            <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center border-2 border-white/10 transition-colors shadow-lg ${tracking.isActive ? 'bg-[#ff2d2d]/20 border-[#ff2d2d]/40' : 'bg-white/10 group-hover:bg-[#ff2d2d]/20'}`}>
-                                <PackageIcon className={`w-12 h-12 transition-colors ${tracking.isActive ? 'text-[#ff2d2d]' : 'text-white/50 group-hover:text-[#ff2d2d]'}`} />
+                            <div className="bg-[#ff2d2d]/10 w-24 h-24 rounded-[2rem] flex items-center justify-center border-2 border-[#ff2d2d]/20">
+                                <PackageIcon className="w-12 h-12 text-[#ff2d2d]" />
                             </div>
                             <div>
                                 <p className="text-[#ff2d2d] font-black text-sm uppercase tracking-widest mb-1">NODE-#{o.id}</p>
-                                <h5 className="text-5xl font-black text-white tracking-tighter leading-none">{o.items?.[0]?.restaurantName || 'Gourmet Engagement'}</h5>
-                                <div className="mt-4 flex items-center gap-4">
-                                  <Badge color={o.status === 'delivered' ? 'gold' : 'primary'} pulse={tracking.isActive}>
-                                    {o.status.replace('_', ' ')}
-                                  </Badge>
-                                  {tracking.isActive && <span className="text-[10px] font-black text-red-500 uppercase tracking-widest animate-pulse">LIVE TRACKING ACTIVE</span>}
-                                </div>
+                                <h5 className="text-5xl font-black text-[#050505] tracking-tighter leading-none">{o.items?.[0]?.restaurantName || 'Gourmet Engagement'}</h5>
+                                <div className="mt-4"><Badge color={o.status === 'delivered' ? 'gold' : 'primary'} pulse={tracking.isActive}>{o.status.replace('_', ' ')}</Badge></div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-5xl font-black text-white tracking-tighter leading-none mb-3">₹{o.total}</p>
-                            <p className="text-xs text-white/60 font-black uppercase tracking-[0.2em]">{new Date(o.timestamp).toLocaleDateString()}</p>
+                            <p className="text-5xl font-black text-[#ff2d2d] tracking-tighter leading-none mb-3">₹{o.total}</p>
+                            <p className="text-xs text-[#050505]/40 font-black uppercase tracking-[0.2em]">{new Date(o.timestamp).toLocaleDateString()}</p>
                           </div>
                       </div>
-                      
                       {tracking.isActive && (
-                        <div className="h-[400px] border-t border-white/10 relative">
+                        <div className="h-[400px] border-t border-[#050505]/10">
                            <InteractiveMap 
                               center={tracking.courierPos} 
                               markers={[
-                                { position: tracking.restCoords, color: 'white/10', label: '🏪' },
-                                { position: tracking.userPos, color: 'white/10', label: '🏠' },
+                                { position: tracking.restCoords, color: 'gray-300', label: '🏪' },
+                                { position: tracking.userPos, color: 'gray-300', label: '🏠' },
                                 { position: tracking.courierPos, color: 'red-500', label: '🚲', pulse: true }
                               ]}
                               polyline={[tracking.restCoords, tracking.courierPos, tracking.userPos]}
                               height="400px"
                               zoom={16}
                            />
-                           <div className="absolute top-6 left-6 right-6 flex justify-between pointer-events-none">
-                              <Badge color="ghost">FLeet Dispatch: Active</Badge>
-                              <Badge color="primary">ETA: 12 MINS</Badge>
-                           </div>
                         </div>
                       )}
                   </GlassCard>
@@ -852,10 +707,10 @@ const App = () => {
 
       <footer className="py-24 border-t border-white/10 flex flex-col items-center justify-center opacity-40">
           <div className="flex items-center gap-3 mb-4">
-             <SparklesIcon className="w-6 h-6 text-white" />
-             <span className="text-2xl font-black tracking-[1em] text-white">FLAVORDISH.</span>
+             <SparklesIcon className="w-6 h-6 text-[#ff2d2d]" />
+             <span className="text-2xl font-black tracking-[1em] text-[#ff2d2d]">FLAVORDISH.</span>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white">OBSIDIAN CORE • DEPLOYED 2025</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.6em] text-[#ff2d2d]">OBSIDIAN CORE • DEPLOYED 2025</p>
       </footer>
     </div>
   );
