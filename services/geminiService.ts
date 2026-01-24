@@ -1,12 +1,91 @@
-
 import { GoogleGenAI, Type, Modality, LiveServerMessage } from "@google/genai";
-import { MenuItem, AiRecommendation, DiscoveryResult } from "../types";
+import { MenuItem, DiscoveryResult, Restaurant, AiRecommendation } from "../types";
+
+/**
+ * Extracts structured restaurant data from raw text (e.g. website content)
+ */
+export const extractRestaurantData = async (rawText: string): Promise<Restaurant | null> => {
+  // Initialize AI client using environment variable
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `You are an expert data architect for a food delivery platform. 
+      Analyze the following text from a restaurant website/menu: "${rawText}"
+      
+      Extract and structure the data into a JSON object matching this schema:
+      {
+        "name": "Restaurant Name",
+        "cuisine": "Main Cuisine (e.g. North Indian, Italian)",
+        "rating": 4.5,
+        "deliveryTime": "30-45 min",
+        "deliveryFee": 40,
+        "image": "Search-based Unsplash URL for the restaurant exterior or signature dish",
+        "menu": [
+          {
+            "id": "m_random",
+            "name": "Dish Name",
+            "description": "Short appetizing description",
+            "price": 250,
+            "category": "Main/Starter/Dessert",
+            "image": "Specific Unsplash URL for this dish",
+            "rating": 4.5,
+            "prepTime": "20 min"
+          }
+        ]
+      }
+
+      Important Rules:
+      1. Ensure prices are in INR (numbers only).
+      2. If rating or delivery info is missing, use realistic placeholders.
+      3. For images, use 'https://images.unsplash.com/photo-...' style URLs related to the specific food items.
+      4. Limit the menu to the top 6 items found in the text.
+      5. Return ONLY the JSON object.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            cuisine: { type: Type.STRING },
+            rating: { type: Type.NUMBER },
+            deliveryTime: { type: Type.STRING },
+            deliveryFee: { type: Type.NUMBER },
+            image: { type: Type.STRING },
+            menu: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  name: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  price: { type: Type.NUMBER },
+                  category: { type: Type.STRING },
+                  image: { type: Type.STRING },
+                  rating: { type: Type.NUMBER },
+                  prepTime: { type: Type.STRING }
+                },
+                required: ["id", "name", "description", "price", "image"]
+              }
+            }
+          },
+          required: ["name", "cuisine", "menu"]
+        }
+      }
+    });
+
+    return JSON.parse(response.text || "{}");
+  } catch (error) {
+    console.error("Extraction Error:", error);
+    return null;
+  }
+};
 
 /**
  * Smart Recommendations using Gemini 3 Flash
  */
 export const getSmartRecommendations = async (userPrompt: string): Promise<AiRecommendation[] | null> => {
-  // Always initialize with named parameter and process.env.API_KEY
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
@@ -30,7 +109,6 @@ export const getSmartRecommendations = async (userPrompt: string): Promise<AiRec
       },
     });
 
-    // Access .text property directly
     return JSON.parse(response.text || "[]");
   } catch (error) {
     console.error("AI Recommendation Error:", error);
@@ -39,7 +117,7 @@ export const getSmartRecommendations = async (userPrompt: string): Promise<AiRec
 };
 
 /**
- * Enhances menu item descriptions to be more appetizing and creative.
+ * Enhances menu item descriptions in batch with "Gourmet Storytelling".
  */
 export const enhanceMenuDescriptions = async (menuItems: MenuItem[]): Promise<Record<string, string> | null> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -47,7 +125,19 @@ export const enhanceMenuDescriptions = async (menuItems: MenuItem[]): Promise<Re
     const itemsJson = JSON.stringify(menuItems.map(i => ({ id: i.id, name: i.name, current: i.description })));
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `You are a world-class food critic and menu designer with deep knowledge of Ahmedabad's culinary scene. Enhance the descriptions for these menu items to be incredibly appetizing, sensory, and descriptive. Highlight textures, aromas, and flavors. Return a JSON array of objects, each with 'id' and 'enhancedDescription'.\n\nItems: ${itemsJson}`,
+      contents: `You are a legendary Michelin-starred food critic and world-class culinary copywriter. Your specialty is "Gourmet Storytelling" with a deep appreciation for the spices and textures of Ahmedabad's rich food culture. 
+      
+      Task: Transform these basic menu descriptions into poetic, mouth-watering, sensory experiences.
+      
+      Guidelines:
+      - Use evocative language (e.g., "sizzling", "velvety", "aromatic", "charred to perfection", "burst of umami").
+      - Highlight the heritage, freshness, or premium nature of the ingredients.
+      - Make the reader feel the texture and smell the aroma through your words.
+      - Keep it punchy and elegant (max 25 words per item).
+      - Ensure the tone fits a premium delivery platform.
+      - Return a JSON array of objects, each with 'id' and 'enhancedDescription'.
+
+      Items to transform: ${itemsJson}`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -66,13 +156,41 @@ export const enhanceMenuDescriptions = async (menuItems: MenuItem[]): Promise<Re
 
     const results = JSON.parse(response.text || "[]");
     const enhancedMap: Record<string, string> = {};
-    results.forEach((item: { id: string; enhancedDescription: string }) => {
+    results.forEach((item: any) => {
       enhancedMap[item.id] = item.enhancedDescription;
     });
     return enhancedMap;
   } catch (error) {
     console.error("Menu Enhancement Error:", error);
     return null;
+  }
+};
+
+/**
+ * Enhances a single menu item description to be more creative and appetizing.
+ */
+export const enhanceSingleItemDescription = async (itemName: string, itemDescription: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `You are a world-class culinary copywriter. Your task is to write a single, short, and incredibly mouth-watering description for a dish common in Ahmedabad. 
+      
+      Dish Name: "${itemName}"
+      Base Info: "${itemDescription}"
+      
+      Instructions:
+      - Be creative, sensory, and evocative.
+      - Mention textures (crispy, creamy, tender), aromas, or specific high-quality ingredients.
+      - Keep it concise (maximum 160 characters).
+      - Do not use hashtags or emojis.
+      - Return ONLY the enhanced description text.`,
+    });
+
+    return response.text?.trim() || itemDescription;
+  } catch (error) {
+    console.error("Single Item AI Error:", error);
+    return itemDescription;
   }
 };
 
@@ -135,7 +253,7 @@ export const connectToLiveSupport = async (callbacks: {
         scriptProcessor.onaudioprocess = (e) => {
           const inputData = e.inputBuffer.getChannelData(0);
           const pcmBlob = createBlob(inputData);
-          // Solely rely on sessionPromise resolves
+          // CRITICAL: Ensure data is streamed only after the session promise resolves.
           sessionPromise.then(session => session.sendRealtimeInput({ media: pcmBlob }));
         };
         source.connect(scriptProcessor);
@@ -144,8 +262,6 @@ export const connectToLiveSupport = async (callbacks: {
       },
       onmessage: async (message: LiveServerMessage) => {
         callbacks.onmessage(message);
-        
-        // Extracting audio output bytes
         const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
         if (base64Audio) {
           nextStartTime = Math.max(nextStartTime, outputAudioContext.currentTime);
@@ -173,7 +289,7 @@ export const connectToLiveSupport = async (callbacks: {
       speechConfig: {
         voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
       },
-      systemInstruction: 'You are a friendly Indian food delivery concierge for FlavorDish, specifically helping users in Ahmedabad. You help users check order status, find the best Gujarati dishes or Amdavadi specialties, and handle issues with a warm, professional tone.',
+      systemInstruction: 'You are a friendly Indian food delivery concierge for FlavorDish, specifically helping users in Ahmedabad. You help users check order status, find the best Gujarati thalis, khaman, or Amdavadi biryani, and handle issues with a warm, professional tone.',
       inputAudioTranscription: {},
       outputAudioTranscription: {},
     }
@@ -182,6 +298,7 @@ export const connectToLiveSupport = async (callbacks: {
   return sessionPromise;
 };
 
+// PCM Audio encoding
 function createBlob(data: Float32Array) {
   const l = data.length;
   const int16 = new Int16Array(l);
@@ -192,6 +309,7 @@ function createBlob(data: Float32Array) {
   };
 }
 
+// Custom base64 decoding
 function decodeBase64(base64: string) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -199,12 +317,14 @@ function decodeBase64(base64: string) {
   return bytes;
 }
 
+// Custom base64 encoding
 function encodeBase64(bytes: Uint8Array) {
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
 
+// Raw PCM audio decoding
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number) {
   const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;

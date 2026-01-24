@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// Use extensionless import to allow the resolver to find the App.tsx module bridge
 import App from './App';
 
 const rootElement = document.getElementById('root');
