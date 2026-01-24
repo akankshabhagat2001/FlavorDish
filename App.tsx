@@ -1,62 +1,45 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, BarChart, Bar, Cell 
+  AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip
 } from 'recharts';
-import { StarIcon, CartIcon, ClockIcon, SparklesIcon, TagIcon, RefreshIcon, HeartIcon } from './components/Icons';
+import { StarIcon, CartIcon, ClockIcon, SparklesIcon, TagIcon, RefreshIcon } from './components/Icons';
 import { db } from './services/databaseService';
 
-// --- Types ---
-import { Restaurant, Order, MenuItem } from './types';
-
-// --- Additional Icons ---
+// --- Icons ---
+const MapPinIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+);
 const StoreIcon = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
 );
 const BikeIcon = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 );
-const MailIcon = ({ className = "w-5 h-5" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-);
-const PhoneIcon = ({ className = "w-5 h-5" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-);
-const MapPinIcon = ({ className = "w-5 h-5" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-);
 const ChevronRight = ({ className = "w-4 h-4" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
 );
 
-const GlassCard: React.FC<{ children: React.ReactNode; className?: string; onClick?: () => void }> = ({ children, className = "", onClick }) => (
-  <div onClick={onClick} className={`bg-white rounded-[2rem] p-6 shadow-xl transition-all duration-500 hover:shadow-2xl ${className} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}>
-    {children}
-  </div>
-);
-
 const Badge: React.FC<{ children: React.ReactNode; color?: 'red' | 'gold' | 'gray' }> = ({ children, color = 'red' }) => {
   const styles = {
-    red: "bg-[#ff2d2d] text-white",
-    gold: "bg-[#ffc107] text-black",
-    gray: "bg-gray-100 text-gray-600"
+    red: "bg-[#E23744] text-white",
+    gold: "bg-[#FFB300] text-white",
+    gray: "bg-gray-100 text-gray-500"
   };
-  return <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${styles[color]}`}>{children}</span>;
+  return <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${styles[color]}`}>{children}</span>;
 };
 
 const App = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentView, setCurrentView] = useState('home'); 
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [cart, setCart] = useState<any[]>([]);
   const [authPortal, setAuthPortal] = useState<'user' | 'partner' | 'fleet'>('user');
   const [isRegistering, setIsRegistering] = useState(false);
   const [authForm, setAuthForm] = useState({ username: '', password: '', phone: '', otp: '', name: '', email: '' });
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [partnerInvites, setPartnerInvites] = useState<any[]>([]);
 
   useEffect(() => {
     const user = db.getCurrentUser();
@@ -66,7 +49,6 @@ const App = () => {
     }
     db.getRestaurants().then(setRestaurants);
     db.getOrders().then(setOrders);
-    db.getPartnerInvites().then(setPartnerInvites);
   }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -98,216 +80,249 @@ const App = () => {
     }
   };
 
-  const sendInvite = async () => {
-    if (!authForm.email || !authForm.name) return alert('Enter email and restaurant name');
-    await db.sendPartnerInvite(authForm.email, authForm.name);
-    setPartnerInvites(await db.getPartnerInvites());
-    alert('Email automatically dispatched to partner.');
-  };
-
   const HomeView = () => (
-    <div className="animate-reveal">
-      <section className="relative h-[600px] flex flex-col items-center justify-center text-center overflow-hidden">
+    <div className="animate-up">
+      {/* Search Header */}
+      <section className="relative h-[480px] flex items-center justify-center overflow-hidden bg-[#1c1c1c]">
         <div className="absolute inset-0 z-0">
-          <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="w-full h-full object-cover brightness-[0.4] scale-110" alt="Hero" />
+          <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="w-full h-full object-cover opacity-30" alt="Hero" />
         </div>
-        <div className="relative z-10 w-full max-w-5xl px-8">
-          <h1 className="text-9xl font-black text-white italic tracking-tighter mb-8 animate-reveal">FLAVORDISH.</h1>
-          <p className="text-white text-3xl font-bold mb-16 opacity-90">Ahmedabad's Smartest Food Network</p>
-          <div className="bg-white rounded-2xl flex items-center p-2 shadow-2xl w-full max-w-3xl mx-auto">
-            <div className="flex items-center gap-3 px-6 py-4 border-r border-gray-100 w-1/3">
-              <MapPinIcon className="text-[#ff2d2d]" />
-              <input type="text" className="bg-transparent text-black font-semibold outline-none w-full" defaultValue="Ahmedabad" />
+        <div className="relative z-10 w-full max-w-4xl px-8 text-center">
+          <h1 className="text-7xl font-black text-white italic tracking-tighter mb-6">FLAVORDISH.</h1>
+          <p className="text-white/80 text-2xl font-medium mb-10">Find the best food in Ahmedabad</p>
+          <div className="bg-white rounded-xl flex flex-col md:flex-row items-center p-1.5 shadow-2xl">
+            <div className="flex items-center gap-3 px-6 py-3 border-r border-gray-100 w-full md:w-1/3">
+              <MapPinIcon className="text-[#E23744]" />
+              <input type="text" className="bg-transparent text-gray-800 font-medium border-none p-0 w-full" defaultValue="Ahmedabad" />
             </div>
-            <div className="flex items-center gap-4 px-6 py-4 w-2/3">
-              <input type="text" className="bg-transparent text-black font-semibold outline-none w-full" placeholder="Search for restaurant, cuisine or a dish" />
+            <div className="flex items-center gap-4 px-6 py-3 w-full md:w-2/3">
+              <input type="text" className="bg-transparent text-gray-800 font-medium border-none p-0 w-full" placeholder="Search for restaurant, cuisine or a dish" />
             </div>
           </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-8 py-24">
-        <h2 className="text-5xl font-black text-white tracking-tighter mb-12">Top picks in Ahmedabad</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {restaurants.map(res => (
-            <GlassCard key={res.id} onClick={() => { setCurrentView('restaurant'); }} className="p-0 overflow-hidden group border-none">
-              <div className="h-72 overflow-hidden relative">
-                <img src={res.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={res.name} />
-                <div className="absolute top-6 right-6"><Badge color="gold">{res.rating} ★</Badge></div>
-              </div>
-              <div className="p-8">
-                <h4 className="text-2xl font-black text-black tracking-tighter mb-1">{res.name}</h4>
-                <p className="text-sm text-gray-500 font-bold mb-6">{res.cuisine}</p>
-                <div className="pt-6 border-t border-gray-50 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  <span>{res.deliveryTime}</span>
-                  <ChevronRight />
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-16 space-y-20">
+        <section>
+          <div className="flex justify-between items-end mb-8">
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Popular Collections</h2>
+            <button className="text-[#E23744] text-sm font-bold flex items-center gap-1">All collections <ChevronRight /></button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { title: "Trending this Week", count: "12 Places", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800" },
+              { title: "Authentic Gujarati", count: "24 Places", img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800" },
+              { title: "Insta-worthy Spots", count: "18 Places", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=800" },
+              { title: "Late Night Cravings", count: "15 Places", img: "https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=800" },
+            ].map((col, i) => (
+              <div key={i} className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm">
+                <img src={col.img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={col.title} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                <div className="absolute bottom-5 left-5 text-white">
+                  <h4 className="font-bold text-lg leading-tight">{col.title}</h4>
+                  <p className="text-xs opacity-80 flex items-center gap-1 mt-1">{col.count} <ChevronRight /></p>
                 </div>
               </div>
-            </GlassCard>
-          ))}
-        </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Top Restaurants near you</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {restaurants.map(res => (
+              <div key={res.id} onClick={() => setCurrentView('restaurant')} className="glass-card overflow-hidden group border-none">
+                <div className="h-56 relative overflow-hidden">
+                  <img src={res.image} className="w-full h-full object-cover" alt={res.name} />
+                  <div className="absolute top-4 right-4"><Badge color="gold">{res.rating} ★</Badge></div>
+                </div>
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-xl font-bold text-gray-900">{res.name}</h4>
+                    <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">{res.deliveryTime}</span>
+                  </div>
+                  <p className="text-sm text-gray-500 font-medium mb-4">{res.cuisine}</p>
+                  <div className="pt-4 border-t border-gray-50 flex justify-between items-center text-[11px] font-bold text-gray-400 uppercase tracking-wide">
+                    <span>Ahmedabad</span>
+                    <span className="text-[#E23744]">ORDER NOW</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
 
   const LoginPortal = () => (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-8 relative overflow-hidden">
-      <div className="w-full max-w-6xl z-10 animate-reveal">
-        <div className="text-center mb-16">
-          <h2 className="text-6xl font-black text-[#ff2d2d] tracking-tighter mb-2 italic">FLAVORDISH.</h2>
-          <p className="text-white/40 text-xs font-black uppercase tracking-[0.5em]">Authentication Node</p>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-4xl animate-up">
+        <div className="text-center mb-12">
+          <h2 className="text-5xl font-black text-[#E23744] italic tracking-tighter mb-2">FLAVORDISH.</h2>
+          <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Amdavad's Culinary Network</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-3 gap-6 mb-10">
           {[
-            { id: 'user', label: 'Customer', icon: <CartIcon /> },
-            { id: 'partner', label: 'Partner', icon: <StoreIcon /> },
-            { id: 'fleet', label: 'Fleet', icon: <BikeIcon /> }
+            { id: 'user', label: 'Customer', icon: <CartIcon className="w-6 h-6" /> },
+            { id: 'partner', label: 'Partner', icon: <StoreIcon className="w-6 h-6" /> },
+            { id: 'fleet', label: 'Fleet', icon: <BikeIcon className="w-6 h-6" /> }
           ].map(p => (
             <button 
               key={p.id}
               onClick={() => { setAuthPortal(p.id as any); setOtpSent(false); setIsRegistering(false); }}
-              className={`bg-white p-12 rounded-[3rem] transition-all duration-500 flex flex-col items-center gap-6 ${authPortal === p.id ? 'ring-4 ring-[#ff2d2d] shadow-2xl scale-105' : 'opacity-40 hover:opacity-100'}`}
+              className={`p-8 rounded-3xl transition-all duration-300 flex flex-col items-center gap-4 ${authPortal === p.id ? 'bg-[#E23744] text-white shadow-lg' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
             >
-              <div className={`p-6 rounded-[2rem] ${authPortal === p.id ? 'bg-[#ff2d2d] text-white' : 'bg-gray-100 text-black'}`}>{p.icon}</div>
-              <h3 className="text-2xl font-black text-black tracking-tighter uppercase">{p.label}</h3>
+              <div className="p-4 rounded-2xl bg-white/20">{p.icon}</div>
+              <h3 className="text-sm font-bold uppercase tracking-wider">{p.label}</h3>
             </button>
           ))}
         </div>
 
-        <div className="max-w-xl mx-auto">
-          <form onSubmit={handleAuth} className="space-y-6 bg-white p-12 rounded-[3rem] shadow-2xl">
-            <h4 className="text-center text-black font-black uppercase tracking-widest text-[10px] mb-8">
-              {isRegistering ? 'Create Account' : `Login as ${authPortal}`}
+        <div className="max-w-md mx-auto glass-card !p-10 !shadow-lg border-none">
+          <form onSubmit={handleAuth} className="space-y-6">
+            <h4 className="text-center text-gray-900 font-black text-xl mb-4">
+              {isRegistering ? 'Join the Grid' : `${authPortal === 'user' ? 'Customer' : authPortal.charAt(0).toUpperCase() + authPortal.slice(1)} Login`}
             </h4>
             
             <div className="space-y-4">
               {authPortal === 'partner' ? (
                 <>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-4">Phone Number</p>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Phone Number</label>
                     <div className="flex gap-2">
-                       <span className="bg-gray-50 border border-gray-100 rounded-2xl p-5 font-bold">+91</span>
-                       <input type="tel" className="flex-grow bg-gray-50 border border-gray-100 rounded-2xl py-5 px-8 outline-none text-[#ff2d2d] text-xl font-bold" placeholder="9876543210" value={authForm.phone} onChange={e => setAuthForm({ ...authForm, phone: e.target.value })} required disabled={otpSent} />
+                       <span className="bg-gray-50 border border-gray-100 rounded-xl p-3.5 font-bold text-gray-500">+91</span>
+                       <input type="tel" className="flex-grow" placeholder="Enter number" value={authForm.phone} onChange={e => setAuthForm({ ...authForm, phone: e.target.value })} required disabled={otpSent} />
                     </div>
                   </div>
                   {otpSent && (
-                    <div className="space-y-1 animate-reveal">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-4">Enter OTP</p>
-                      <input type="text" className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-5 px-8 outline-none text-[#ff2d2d] text-3xl font-black tracking-[1em] text-center" maxLength={4} value={authForm.otp} onChange={e => setAuthForm({ ...authForm, otp: e.target.value })} required />
+                    <div className="space-y-1 animate-up">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">4-Digit OTP</label>
+                      <input type="text" className="w-full text-center text-2xl font-black tracking-[0.5em]" maxLength={4} value={authForm.otp} onChange={e => setAuthForm({ ...authForm, otp: e.target.value })} required />
                     </div>
                   )}
-                  <button type="submit" disabled={isAuthLoading} className="w-full bg-black text-white py-6 rounded-2xl font-black text-xl uppercase tracking-widest hover:bg-[#ff2d2d] transition-all shadow-xl">
-                    {isAuthLoading ? 'Processing...' : otpSent ? 'Login' : 'Send SMS OTP'}
+                  <button type="submit" disabled={isAuthLoading} className="btn-primary-dish w-full">
+                    {isAuthLoading ? 'Please wait...' : otpSent ? 'Authorize Login' : 'Send OTP via SMS'}
                   </button>
                 </>
               ) : (
                 <>
                   {isRegistering && (
                     <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-4">Full Name</p>
-                      <input type="text" className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-5 px-8 outline-none text-[#ff2d2d] text-lg font-bold" placeholder="Amdavadi Guest" value={authForm.name} onChange={e => setAuthForm({ ...authForm, name: e.target.value })} required />
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Full Name</label>
+                      <input type="text" className="w-full" placeholder="John Doe" value={authForm.name} onChange={e => setAuthForm({ ...authForm, name: e.target.value })} required />
                     </div>
                   )}
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-4">Username</p>
-                    <input type="text" className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-5 px-8 outline-none text-[#ff2d2d] text-lg font-bold" value={authForm.username} onChange={e => setAuthForm({ ...authForm, username: e.target.value })} required />
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Username</label>
+                    <input type="text" className="w-full" value={authForm.username} onChange={e => setAuthForm({ ...authForm, username: e.target.value })} required />
                   </div>
-                  {isRegistering && (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-4">Email Address</p>
-                      <input type="email" className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-5 px-8 outline-none text-[#ff2d2d] text-lg font-bold" value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} required />
-                    </div>
-                  )}
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-black/30 ml-4">Password</p>
-                    <input type="password" className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-5 px-8 outline-none text-[#ff2d2d] text-lg font-bold" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} required />
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Password</label>
+                    <input type="password" className="w-full" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} required />
                   </div>
-                  <button type="submit" disabled={isAuthLoading} className="w-full bg-black text-white py-6 rounded-2xl font-black text-xl uppercase tracking-widest hover:bg-[#ff2d2d] transition-all shadow-xl">
-                    {isAuthLoading ? 'Connecting...' : isRegistering ? 'Register' : 'Connect'}
+                  <button type="submit" disabled={isAuthLoading} className="btn-primary-dish w-full">
+                    {isAuthLoading ? 'Connecting...' : isRegistering ? 'Complete Registration' : 'Login'}
                   </button>
                 </>
               )}
             </div>
           </form>
-          <div className="text-center mt-8">
-            <button onClick={() => { setIsRegistering(!isRegistering); setOtpSent(false); }} className="text-white/60 hover:text-white font-black uppercase text-[10px] tracking-widest mr-8">
-              {isRegistering ? 'Back to Login' : 'Register via Online Form'}
+          <div className="text-center mt-6">
+            <button onClick={() => { setIsRegistering(!isRegistering); setOtpSent(false); }} className="text-[#E23744] text-xs font-bold hover:underline">
+              {isRegistering ? 'Already have an account? Login' : 'No account? Register as Customer'}
             </button>
-            <button onClick={() => setCurrentView('home')} className="text-white/40 hover:text-white font-black uppercase text-[10px] tracking-widest">Exit</button>
           </div>
         </div>
-      </div>
-    </div>
-  );
-
-  const AdminPanel = () => (
-    <div className="min-h-screen bg-[#050505] p-12">
-      <div className="flex justify-between items-end mb-20">
-        <h2 className="text-7xl font-black text-white tracking-tighter italic">ADMIN<br/><span className="text-[#ff2d2d]">COMMAND.</span></h2>
-        <div className="text-right"><Badge color="gold">System Master</Badge></div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <GlassCard className="!bg-[#111] !text-white border-gray-800">
-           <h4 className="text-2xl font-black mb-6 uppercase tracking-widest flex items-center gap-3"><MailIcon className="text-[#ff2d2d]" /> Auto-Onboarding (Email)</h4>
-           <div className="space-y-4">
-              <input type="text" className="w-full bg-black border border-gray-800 rounded-xl py-4 px-6 outline-none text-[#ff2d2d]" placeholder="Restaurant Name" onChange={e => setAuthForm({...authForm, name: e.target.value})} />
-              <input type="email" className="w-full bg-black border border-gray-100 rounded-xl py-4 px-6 outline-none text-[#ff2d2d]" placeholder="Partner Email" onChange={e => setAuthForm({...authForm, email: e.target.value})} />
-              <button onClick={sendInvite} className="bg-[#ff2d2d] text-white w-full py-4 rounded-xl font-black uppercase text-xs tracking-widest">Dispatch Welcome Pack</button>
-           </div>
-           <div className="mt-8 pt-8 border-t border-gray-800">
-              <h5 className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-4">Recent Dispatches</h5>
-              {partnerInvites.map(inv => (
-                <div key={inv.id} className="flex justify-between text-sm mb-2 opacity-80">
-                   <span>{inv.restaurantName} ({inv.email})</span>
-                   <span className="text-[#ff2d2d]">{inv.status}</span>
-                </div>
-              ))}
-           </div>
-        </GlassCard>
-
-        <GlassCard className="!bg-[#111] !text-white border-gray-800">
-           <h4 className="text-2xl font-black mb-6 uppercase tracking-widest">Logistics Feed</h4>
-           <div className="space-y-4">
-              {orders.map(o => (
-                <div key={o.id} className="bg-black/50 p-6 rounded-2xl flex justify-between items-center border border-gray-800">
-                   <div>
-                      <h6 className="font-black text-white">{o.id}</h6>
-                      <p className="text-xs text-gray-500">{o.status}</p>
-                   </div>
-                   <button onClick={() => db.updateOrderStatus(o.id, 'delivered').then(() => db.getOrders().then(setOrders))} className="text-[10px] font-black text-[#ff2d2d] border border-[#ff2d2d]/20 px-4 py-2 rounded-lg">Finalize</button>
-                </div>
-              ))}
-           </div>
-        </GlassCard>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#050505]">
-      <nav className="fixed top-0 left-0 right-0 z-[1000] bg-black/80 backdrop-blur-md py-6 border-b border-white/5">
-        <div className="container mx-auto px-8 flex justify-between items-center">
-          <div onClick={() => setCurrentView('home')} className="flex items-center gap-2 cursor-pointer"><SparklesIcon className="text-[#ff2d2d]"/><span className="text-2xl font-black text-white italic">FLAVORDISH.</span></div>
-          <div className="flex items-center gap-10 text-[10px] font-black uppercase text-white/60">
+    <div className="min-h-screen">
+      {/* Navigation */}
+      <nav className="nav-fixed fixed top-0 left-0 right-0 z-[1000] py-4">
+        <div className="container mx-auto px-6 flex justify-between items-center">
+          <div onClick={() => setCurrentView('home')} className="flex items-center gap-2 cursor-pointer">
+            <SparklesIcon className="text-[#E23744] w-6 h-6"/>
+            <span className="text-2xl font-black text-gray-900 tracking-tighter italic">FLAVORDISH.</span>
+          </div>
+          <div className="flex items-center gap-8">
             {currentUser ? (
-              <div className="flex items-center gap-6">
-                 <span>Welcome, {currentUser.name}</span>
-                 <button onClick={() => { db.logout(); setCurrentUser(null); setCurrentView('home'); }} className="text-[#ff2d2d] border border-[#ff2d2d]/20 px-4 py-2 rounded-full">Disconnect</button>
+              <div className="flex items-center gap-5">
+                 <span className="text-sm font-bold text-gray-700">Hi, {currentUser.name}</span>
+                 <button onClick={() => { db.logout(); setCurrentUser(null); setCurrentView('home'); }} className="btn-outline-dish py-2 px-4 text-xs">Logout</button>
               </div>
             ) : (
-              <button onClick={() => setCurrentView('login')} className="bg-[#ff2d2d] text-white px-8 py-3 rounded-full hover:scale-105 transition-all">Portal Access</button>
+              <button onClick={() => setCurrentView('login')} className="btn-primary-dish py-2.5 px-6 text-sm">Join the Club</button>
             )}
           </div>
         </div>
       </nav>
 
-      <div className="pt-24">
+      <div className="pt-20">
         {currentView === 'home' && <HomeView />}
         {currentView === 'login' && <LoginPortal />}
-        {currentView === 'partner-dashboard' && <AdminPanel />}
+        {currentView === 'partner-dashboard' && (
+          <div className="container mx-auto px-6 py-12">
+            <div className="flex justify-between items-center mb-10">
+              <h2 className="text-4xl font-black text-gray-900">Partner <span className="text-[#E23744]">Console</span></h2>
+              <Badge color="gold">Verified Merchant</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="glass-card p-8 col-span-2">
+                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Revenue Overview</h4>
+                <div className="h-64">
+                   <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={orders.map((o, i) => ({ n: i, v: o.total }))}>
+                         <Area type="monotone" dataKey="v" stroke="#E23744" strokeWidth={3} fill="#E23744" fillOpacity={0.05} />
+                      </AreaChart>
+                   </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="space-y-8">
+                <div className="glass-card p-8 bg-[#E23744] text-white border-none">
+                  <h4 className="text-sm font-bold opacity-80 uppercase tracking-widest mb-4">Total Orders</h4>
+                  <p className="text-5xl font-black">{orders.length}</p>
+                </div>
+                <div className="glass-card p-8">
+                  <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Active Fleet</h4>
+                  <p className="text-4xl font-black text-gray-900">12 Riders</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      <footer className="bg-[#1c1c1c] text-white py-16 mt-20">
+        <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div>
+            <h3 className="text-2xl font-black italic mb-6">FLAVORDISH.</h3>
+            <p className="text-white/40 text-sm leading-relaxed">Making Amdavadi food culture accessible through smart logistics and elite curation.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-8 md:col-span-2">
+            <div className="space-y-4">
+              <h5 className="text-xs font-bold uppercase tracking-widest text-white/20">Company</h5>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li className="hover:text-white cursor-pointer">About Us</li>
+                <li className="hover:text-white cursor-pointer">Careers</li>
+                <li className="hover:text-white cursor-pointer">Press</li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h5 className="text-xs font-bold uppercase tracking-widest text-white/20">Partner</h5>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li className="hover:text-white cursor-pointer">Merchant Support</li>
+                <li className="hover:text-white cursor-pointer">Rider Network</li>
+                <li className="hover:text-white cursor-pointer">Brand Toolkit</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
