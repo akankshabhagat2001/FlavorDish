@@ -158,17 +158,34 @@ const InteractiveMap = ({ center, markers = [], polyline = [], height = '450px',
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
+    
+    // Clear old layers
     map.eachLayer((layer) => { if (layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer); });
+    
     markers.forEach(m => {
+      // Use dynamic HTML with animation classes that re-trigger on DOM addition
       const icon = L.divIcon({
         className: 'custom-div-icon',
-        html: `<div class="bg-${m.color || 'danger'} p-2 rounded-circle border-2 border-white shadow-lg ${m.pulse ? 'animate-glow-pulse' : 'animate-marker-bounce'}" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; position: relative;">${m.label || ''}${m.pulse ? '<div class="position-absolute inset-0 rounded-circle bg-white opacity-25 animate-ping"></div>' : ''}</div>`,
-        iconSize: [36, 36], iconAnchor: [18, 18]
+        html: `
+          <div class="position-relative d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <div class="bg-${m.color || 'danger'} p-2 rounded-circle border-2 border-white shadow-lg d-flex align-items-center justify-content-center animate-marker-bounce" style="width: 36px; height: 36px; color: white; font-size: 16px; z-index: 2;">
+              ${m.label || ''}
+            </div>
+            ${m.pulse ? `
+              <div class="position-absolute rounded-circle bg-${m.color || 'danger'} opacity-40 animate-glow-pulse" style="width: 36px; height: 36px; z-index: 1;"></div>
+              <div class="position-absolute rounded-circle border-2 border-${m.color || 'danger'} animate-marker-ping" style="width: 36px; height: 36px; z-index: 0;"></div>
+            ` : ''}
+          </div>
+        `,
+        iconSize: [36, 36], 
+        iconAnchor: [18, 18]
       });
       L.marker(m.position, { icon }).addTo(map);
     });
+    
     if (polyline.length > 0) L.polyline(polyline, { color: '#E23744', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(map);
-    if (center) map.setView(center, zoom, { animate: true, duration: 1 });
+    
+    if (center) map.setView(center, zoom, { animate: true, duration: 0.8 });
   }, [markers, polyline, center, zoom]);
 
   return <div ref={containerRef} className="w-100 h-100 rounded-5 overflow-hidden shadow-sm border border-gray-100" style={{ minHeight: height }} />;

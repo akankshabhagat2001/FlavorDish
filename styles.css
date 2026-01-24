@@ -221,7 +221,20 @@ h1, h2, h3, h4, h5, h6 {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Custom Marker Pulse */
+/* Map Marker Animations */
+.animate-marker-bounce {
+    animation: marker-bounce 0.8s ease-out forwards;
+}
+
+@keyframes marker-bounce {
+    0% { transform: translateY(-30px); opacity: 0; }
+    40% { transform: translateY(0); opacity: 1; }
+    60% { transform: translateY(-10px); }
+    80% { transform: translateY(0); }
+    90% { transform: translateY(-4px); }
+    100% { transform: translateY(0); }
+}
+
 .animate-glow-pulse {
     animation: glow-pulse 2s infinite;
 }
@@ -230,6 +243,17 @@ h1, h2, h3, h4, h5, h6 {
     0% { box-shadow: 0 0 0 0 rgba(226, 55, 68, 0.4); }
     70% { box-shadow: 0 0 0 15px rgba(226, 55, 68, 0); }
     100% { box-shadow: 0 0 0 0 rgba(226, 55, 68, 0); }
+}
+
+.animate-marker-ping {
+    animation: marker-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes marker-ping {
+    75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+    }
 }
 
 .no-scrollbar::-webkit-scrollbar {
