@@ -74,6 +74,7 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
     width: 100%;
+    background-color: transparent;
 }
 
 .z-input-separator {
@@ -126,7 +127,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Hero Section */
 .z-hero {
-    height: 420px;
+    height: 480px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -143,7 +144,7 @@ h1, h2, h3, h4, h5, h6 {
     object-fit: cover;
     width: 100%;
     height: 100%;
-    opacity: 0.5;
+    opacity: 0.6;
 }
 
 .z-hero-content {
@@ -205,14 +206,9 @@ h1, h2, h3, h4, h5, h6 {
 /* Footer */
 .z-footer {
     background-color: #F8F8F8;
-    padding: 3rem 0;
-    margin-top: 4rem;
-}
-
-.z-footer-dark {
-    background-color: var(--bg-dark);
-    color: white;
     padding: 4rem 0;
+    margin-top: 4rem;
+    border-top: 1px solid var(--border-light);
 }
 
 /* Animations */
@@ -223,4 +219,23 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Marker Pulse */
+.animate-glow-pulse {
+    animation: glow-pulse 2s infinite;
+}
+
+@keyframes glow-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(226, 55, 68, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(226, 55, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(226, 55, 68, 0); }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
