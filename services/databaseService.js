@@ -8,7 +8,8 @@ const STORAGE_KEYS = {
   USERS: 'flavordish_db_users',
   ENHANCEMENTS: 'flavordish_db_menu_enhancements',
   PARTNER_INVITES: 'flavordish_db_partner_invites',
-  NOTIFICATIONS: 'flavordish_db_notifications'
+  NOTIFICATIONS: 'flavordish_db_notifications',
+  CART: 'flavordish_db_cart'
 };
 
 class DatabaseService {
@@ -32,14 +33,12 @@ class DatabaseService {
 
   async loginWithPhone(phone, otp) {
     await this.delay(800);
-    // Simulation: Any 4-digit OTP works for demo
     if (otp.length !== 4) throw new Error("Invalid OTP");
     
     const users = this.getUsers();
     let user = users.find(u => u.phone === phone);
     
     if (!user) {
-      // Create a temporary partner if not exists for demo
       user = { id: Date.now().toString(), phone, role: 'partner', name: 'Partner ' + phone.slice(-4) };
     }
     
@@ -80,6 +79,19 @@ class DatabaseService {
     localStorage.removeItem(STORAGE_KEYS.AUTH);
   }
 
+  // --- AI Enhancements ---
+  getMenuEnhancements() {
+    const data = localStorage.getItem(STORAGE_KEYS.ENHANCEMENTS);
+    return data ? JSON.parse(data) : {};
+  }
+
+  saveMenuEnhancements(enhancements) {
+    const existing = this.getMenuEnhancements();
+    const updated = { ...existing, ...enhancements };
+    localStorage.setItem(STORAGE_KEYS.ENHANCEMENTS, JSON.stringify(updated));
+    return updated;
+  }
+
   // --- Admin Logic: Partners & Mail ---
   async getPartnerInvites() {
     const data = localStorage.getItem(STORAGE_KEYS.PARTNER_INVITES);
@@ -98,8 +110,6 @@ class DatabaseService {
     };
     invites.push(newInvite);
     localStorage.setItem(STORAGE_KEYS.PARTNER_INVITES, JSON.stringify(invites));
-    
-    // Log Notification (Simulated Auto-mail)
     this.addNotification(`System: Onboarding email automatically dispatched to ${email} for ${restaurantName}.`);
     return newInvite;
   }
@@ -111,11 +121,6 @@ class DatabaseService {
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications.slice(0, 20)));
   }
 
-  getNotifications() {
-    const data = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-    return data ? JSON.parse(data) : [];
-  }
-
   // --- Restaurants ---
   async getRestaurants() {
     await this.delay(200);
@@ -125,21 +130,6 @@ class DatabaseService {
       return INITIAL_RESTAURANTS;
     }
     return JSON.parse(data);
-  }
-
-  async saveRestaurant(restaurant) {
-    await this.delay(400);
-    const restaurants = await this.getRestaurants();
-    const index = restaurants.findIndex(r => r.id === restaurant.id);
-    let updated;
-    if (index > -1) {
-      updated = [...restaurants];
-      updated[index] = { ...updated[index], ...restaurant };
-    } else {
-      updated = [{ ...restaurant, id: Date.now().toString(), menu: restaurant.menu || [] }, ...restaurants];
-    }
-    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(updated));
-    return updated;
   }
 
   // --- Orders ---
@@ -161,6 +151,16 @@ class DatabaseService {
     const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
     localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(updated));
     return updated;
+  }
+
+  // --- Cart ---
+  getCart() {
+    const data = localStorage.getItem(STORAGE_KEYS.CART);
+    return data ? JSON.parse(data) : [];
+  }
+
+  saveCart(cart) {
+    localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart));
   }
 }
 

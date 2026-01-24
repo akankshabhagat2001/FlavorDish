@@ -1,10 +1,8 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { StarIcon, CartIcon, ClockIcon, SparklesIcon, TagIcon, RefreshIcon } from './components/Icons';
+import React, { useState, useEffect } from 'react';
+import { StarIcon, CartIcon, SparklesIcon } from './components/Icons';
 import { db } from './services/databaseService';
-
-// --- Types ---
-import { Restaurant, Order, MenuItem } from './types';
+import { enhanceMenuDescriptions } from './services/geminiService';
 
 // --- Icons ---
 const MapPinIcon = ({ className = "w-5 h-5" }) => (
@@ -26,51 +24,76 @@ const SearchIcon = ({ className = "w-5 h-5" }) => (
 const App = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentView, setCurrentView] = useState('home'); 
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [cart, setCart] = useState<any[]>([]);
   const [authPortal, setAuthPortal] = useState<'user' | 'partner' | 'fleet'>('user');
   const [isRegistering, setIsRegistering] = useState(false);
-  const [authForm, setAuthForm] = useState({ username: '', password: '', phone: '', otp: '', name: '', email: '' });
+  const [authForm, setAuthForm] = useState({ username: '', password: '', phone: '', otp: '', name: '', email: '', resName: '' });
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [selectedRes, setSelectedRes] = useState<Restaurant | null>(null);
+  const [selectedRes, setSelectedRes] = useState<any>(null);
+  const [partnerInvites, setPartnerInvites] = useState<any[]>([]);
+  
+  // AI-Enhanced Descriptions state
+  const [enhancedDescriptions, setEnhancedDescriptions] = useState<Record<string, string>>({});
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   useEffect(() => {
     const user = db.getCurrentUser();
     if (user) {
       setCurrentUser(user);
+      if (user.role === 'admin') setCurrentView('admin-dashboard');
     }
     db.getRestaurants().then(setRestaurants);
     db.getOrders().then(setOrders);
+    db.getPartnerInvites().then(setPartnerInvites);
+    setEnhancedDescriptions(db.getMenuEnhancements());
   }, []);
+
+  // Trigger AI enhancement when a restaurant is selected
+  useEffect(() => {
+    if (selectedRes && selectedRes.menu) {
+      const itemsToEnhance = selectedRes.menu.filter((item: any) => !enhancedDescriptions[item.id]);
+      if (itemsToEnhance.length > 0) {
+        setIsEnhancing(true);
+        enhanceMenuDescriptions(itemsToEnhance).then(results => {
+          if (results) {
+            const updated = db.saveMenuEnhancements(results);
+            setEnhancedDescriptions(updated);
+          }
+          setIsEnhancing(false);
+        }).catch(() => setIsEnhancing(false));
+      }
+    }
+  }, [selectedRes]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAuthLoading(true);
     try {
-      if (isRegistering && authPortal === 'user') {
-        const user = await db.register({ 
-            username: authForm.username, 
-            password: authForm.password, 
-            name: authForm.name, 
-            email: authForm.email 
-        });
-        setCurrentUser(user);
-        setCurrentView('home');
+      if (isRegistering) {
+        if (authPortal === 'user') {
+          const user = await db.register({ username: authForm.username, password: authForm.password, name: authForm.name, email: authForm.email });
+          setCurrentUser(user);
+          setCurrentView('home');
+        } else {
+          alert('Partner application submitted! We will contact you soon.');
+          setIsRegistering(false);
+        }
       } else if (authPortal === 'partner') {
         if (!otpSent) {
           setOtpSent(true);
-          alert('Demo SMS: Your OTP is 1234');
+          alert('Demo OTP: 1234');
         } else {
           const user = await db.loginWithPhone(authForm.phone, authForm.otp);
           setCurrentUser(user);
-          setCurrentView('home'); // Assume partner goes to home or specialized dash
+          setCurrentView('home');
         }
       } else {
         const user = await db.login(authForm.username, authForm.password);
         setCurrentUser(user);
-        setCurrentView('home');
+        setCurrentView(user.role === 'admin' ? 'admin-dashboard' : 'home');
       }
     } catch (err: any) {
       alert(err.message || 'Authentication failed');
@@ -79,7 +102,7 @@ const App = () => {
     }
   };
 
-  const addToCart = (item: MenuItem, restaurant: Restaurant) => {
+  const addToCart = (item: any, restaurant: any) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
@@ -87,24 +110,20 @@ const App = () => {
     });
   };
 
-  // --- Views ---
-
   const HomeView = () => (
     <div className="fade-in">
-      {/* Hero Section */}
       <section className="z-hero">
-        <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="z-hero-bg" alt="Food background" />
+        <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="z-hero-bg" alt="Hero" />
         <div className="z-hero-content">
-          <h1 className="text-white text-6xl font-black italic tracking-tighter mb-4">FLAVORDISH</h1>
-          <p className="text-white text-2xl font-medium mb-10 opacity-90">Find the best food, drinks, and more in Ahmedabad</p>
-          
+          <h1 className="text-white text-7xl font-black italic tracking-tighter mb-4">FLAVORDISH</h1>
+          <p className="text-white text-2xl font-medium mb-10 opacity-90">Discover the best food & drinks in Ahmedabad</p>
           <div className="z-search-bar mx-auto">
             <div className="d-flex align-items-center ps-3 text-danger">
               <MapPinIcon />
               <input type="text" className="z-input" style={{ width: '150px' }} defaultValue="Ahmedabad" />
             </div>
             <div className="z-input-separator"></div>
-            <div className="d-flex align-items-center flex-grow-1">
+            <div className="d-flex align-items-center flex-grow-1 pe-3">
               <SearchIcon className="text-muted" />
               <input type="text" className="z-input" placeholder="Search for restaurant, cuisine or a dish" />
             </div>
@@ -113,21 +132,14 @@ const App = () => {
       </section>
 
       <div className="container py-5">
-        {/* Collections */}
         <section className="mb-5">
-          <div className="mb-4">
-            <h2 className="h3 fw-bold mb-1">Collections</h2>
-            <div className="d-flex justify-content-between align-items-center">
-              <p className="text-secondary m-0">Explore curated lists of top restaurants, cafes, and bars in Ahmedabad</p>
-              <button className="btn text-danger fw-600 p-0 d-flex align-items-center gap-1">All collections <ChevronRight /></button>
-            </div>
-          </div>
+          <h2 className="h3 fw-bold mb-4">Collections</h2>
           <div className="row g-4">
             {[
               { title: "Trending this Week", places: "12 Places", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800" },
-              { title: "Best of Ahmedabad", places: "24 Places", img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800" },
-              { title: "Newly Opened", places: "18 Places", img: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=800" },
-              { title: "Hidden Gems", places: "15 Places", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=800" },
+              { title: "Authentic Gujarati", places: "24 Places", img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800" },
+              { title: "Insta-worthy Spots", places: "18 Places", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=800" },
+              { title: "Newly Opened", places: "15 Places", img: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=800" },
             ].map((c, i) => (
               <div key={i} className="col-md-3">
                 <div className="collection-card">
@@ -142,50 +154,21 @@ const App = () => {
           </div>
         </section>
 
-        {/* Localities */}
-        <section className="mb-5">
-          <h2 className="h3 fw-bold mb-4">Popular localities in and around Ahmedabad</h2>
-          <div className="row g-3">
-            {["Bodakdev", "Satellite", "Prahlad Nagar", "Vastrapur", "Gurukul", "Thaltej", "Navrangpura", "C G Road", "Ambawadi"].map((loc, i) => (
-              <div key={i} className="col-md-4">
-                <div className="locality-card">
-                  <div>
-                    <h6 className="m-0 fw-bold">{loc}</h6>
-                    <span className="small text-muted">352 places</span>
-                  </div>
-                  <ChevronRight className="text-muted" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Main Food List */}
         <section>
-          <h2 className="h3 fw-bold mb-4">Best Food in Ahmedabad</h2>
+          <h2 className="h3 fw-bold mb-4">Top Restaurants in Ahmedabad</h2>
           <div className="row g-4">
             {restaurants.map(res => (
               <div key={res.id} className="col-md-4">
                 <div className="z-card cursor-pointer h-100" onClick={() => { setSelectedRes(res); setCurrentView('restaurant'); }}>
-                  <div className="position-relative h-64">
+                  <div className="position-relative h-64 overflow-hidden">
                     <img src={res.image} className="w-100 h-100 object-cover" alt={res.name} />
-                    <div className="position-absolute bottom-3 left-3">
-                      <span className="bg-white/90 text-danger px-2 py-1 rounded-1 fw-bold x-small">Flat ₹100 OFF</span>
-                    </div>
                   </div>
                   <div className="p-3">
                     <div className="d-flex justify-content-between align-items-start mb-1">
                       <h5 className="h6 fw-bold m-0 text-truncate">{res.name}</h5>
-                      <span className="z-rating-badge">{res.rating} <StarIcon className="w-2.5 h-2.5" /></span>
+                      <span className="z-rating-badge">{res.rating} ★</span>
                     </div>
-                    <div className="d-flex justify-content-between text-secondary small mb-3">
-                      <span>{res.cuisine}</span>
-                      <span>₹200 for two</span>
-                    </div>
-                    <div className="pt-3 border-top d-flex align-items-center gap-2">
-                       <img src="https://b.zmtcdn.com/data/o2_assets/0b6963158948277c99fbfe10f72d8c511632705482.png" className="w-5 h-5" alt="safety" />
-                       <span className="x-small text-muted">Follows all Max Safety measures to ensure your food is safe</span>
-                    </div>
+                    <p className="text-secondary small mb-3">{res.cuisine} • ₹200 for two</p>
                   </div>
                 </div>
               </div>
@@ -199,118 +182,86 @@ const App = () => {
   const RestaurantView = () => (
     <div className="fade-in pb-5">
       {selectedRes && (
-        <>
-          <div className="container py-4">
-            <nav className="small text-muted mb-4">
-              Home / India / Ahmedabad / {selectedRes.name}
-            </nav>
-            <div className="row g-4 mb-4">
-              <div className="col-md-8">
-                <h1 className="display-6 fw-bold mb-1">{selectedRes.name}</h1>
-                <p className="text-secondary mb-3">{selectedRes.cuisine}</p>
-                <div className="d-flex gap-4">
-                   <div className="d-flex align-items-center gap-2">
-                      <span className="z-rating-badge py-1 px-2">{selectedRes.rating} ★</span>
-                      <span className="small fw-bold">1.2k Delivery Ratings</span>
-                   </div>
-                </div>
+        <div className="container py-4">
+          <div className="row mb-5">
+            <div className="col-md-8">
+              <h1 className="display-5 fw-bold mb-1">{selectedRes.name}</h1>
+              <p className="text-secondary mb-3">{selectedRes.cuisine} • Ahmedabad Central</p>
+              <div className="d-flex gap-4 align-items-center">
+                 <span className="z-rating-badge py-1 px-3 fs-6">{selectedRes.rating} ★</span>
+                 <span className="text-muted fw-bold small">1.5k Delivery Reviews</span>
               </div>
-              <div className="col-md-4 text-end d-flex flex-column justify-content-center">
-                 <button className="btn btn-z-primary mb-2">Order Online</button>
-                 <button className="btn btn-z-outline">Book a Table</button>
-              </div>
+            </div>
+            <div className="col-md-4 text-end d-flex flex-column justify-content-center gap-2">
+               <button className="btn btn-z-primary">Order Online</button>
+               <button className="btn btn-z-outline">Book a Table</button>
             </div>
           </div>
 
-          <div className="bg-section-light py-5">
-            <div className="container">
-              <div className="row g-4">
-                {selectedRes.menu.map(item => (
-                  <div key={item.id} className="col-md-6">
-                    <div className="z-card bg-white p-3 d-flex gap-4">
-                      <div className="flex-grow-1">
-                        <div className="d-flex align-items-center gap-2 mb-1">
-                           <span className="border border-success rounded-circle w-3 h-3 d-inline-block"></span>
-                           <span className="x-small text-warning fw-bold">MUST TRY</span>
-                        </div>
-                        <h6 className="fw-bold mb-1">{item.name}</h6>
-                        <span className="z-rating-badge bg-transparent text-warning border border-warning mb-2">★ ★ ★ ★ ★</span>
-                        <p className="fw-bold mb-2">₹{item.price}</p>
-                        <p className="small text-secondary line-clamp-2">{item.description}</p>
+          <div className="d-flex align-items-center gap-2 mb-4">
+            <h2 className="h4 fw-bold m-0">Menu</h2>
+            {isEnhancing && (
+              <div className="d-flex align-items-center gap-2 ms-3">
+                <SparklesIcon className="text-danger animate-spin" />
+                <span className="text-danger x-small fw-bold uppercase tracking-widest">AI is crafting gourmet descriptions...</span>
+              </div>
+            )}
+          </div>
+
+          <div className="row g-4">
+            {selectedRes.menu.map((item: any) => {
+              const hasEnhanced = !!enhancedDescriptions[item.id];
+              return (
+                <div key={item.id} className="col-md-6">
+                  <div className="z-card bg-white p-3 d-flex gap-4 h-100">
+                    <div className="flex-grow-1">
+                      <div className="d-flex align-items-center gap-2 mb-2">
+                         <span className="border border-success rounded-circle w-2 h-2 d-inline-block"></span>
+                         {hasEnhanced && (
+                           <div className="d-flex align-items-center gap-1 bg-danger/5 px-2 py-0.5 rounded border border-danger/10">
+                              <SparklesIcon className="text-danger w-3 h-3" />
+                              <span className="text-danger fw-bold" style={{ fontSize: '9px' }}>AI ENHANCED</span>
+                           </div>
+                         )}
                       </div>
-                      <div className="position-relative w-32 h-32 flex-shrink-0">
-                        <img src={item.image} className="w-100 h-100 object-cover rounded-3" alt={item.name} />
-                        <button 
-                            onClick={() => addToCart(item, selectedRes)}
-                            className="btn btn-z-primary btn-sm position-absolute bottom-0 start-50 translate-middle-x mb-[-12px] shadow-lg border border-white"
-                        >
-                            ADD +
-                        </button>
-                      </div>
+                      <h6 className="fw-bold mb-1">{item.name}</h6>
+                      <p className="fw-bold mb-2 text-dark">₹{item.price}</p>
+                      <p className={`small leading-relaxed ${hasEnhanced ? 'text-dark italic fw-medium' : 'text-secondary'}`}>
+                        {enhancedDescriptions[item.id] || item.description}
+                      </p>
+                    </div>
+                    <div className="position-relative w-32 h-32 flex-shrink-0">
+                      <img src={item.image} className="w-100 h-100 object-cover rounded-3" alt={item.name} />
+                      <button onClick={() => addToCart(item, selectedRes)} className="btn btn-z-primary btn-sm position-absolute bottom-0 start-50 translate-middle-x mb-[-10px] shadow border border-white">ADD +</button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              );
+            })}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
 
   const LoginPortal = () => (
     <div className="min-h-screen bg-light d-flex align-items-center justify-content-center p-4">
-      <div className="z-card bg-white w-100 shadow-2xl overflow-hidden" style={{ maxWidth: '800px' }}>
+      <div className="z-card bg-white w-100 shadow-lg overflow-hidden" style={{ maxWidth: '800px' }}>
         <div className="row g-0">
-          <div className="col-md-5 bg-dark p-5 text-white d-flex flex-col justify-between">
-            <div>
-              <h2 className="display-6 fw-black italic mb-4">FLAVORDISH</h2>
-              <p className="opacity-70">A smarter way to discover and order the best food in Ahmedabad.</p>
-            </div>
-            <div className="d-flex flex-col gap-3">
-              <div className="locality-card bg-white/10 border-white/20 text-white cursor-pointer" onClick={() => setAuthPortal('user')}>
-                <span>Customer Portal</span>
-                <ChevronRight />
-              </div>
-              <div className="locality-card bg-white/10 border-white/20 text-white cursor-pointer" onClick={() => setAuthPortal('partner')}>
-                <span>Partner Console</span>
-                <ChevronRight />
-              </div>
-            </div>
+          <div className="col-md-5 bg-dark p-5 text-white">
+            <h2 className="display-6 fw-bold italic mb-4">FLAVORDISH</h2>
+            <p className="opacity-70">A smarter way to order food in Ahmedabad.</p>
           </div>
           <div className="col-md-7 p-5">
-            <h3 className="fw-bold mb-4">{isRegistering ? 'Create Account' : `Login to ${authPortal}`}</h3>
+            <h3 className="fw-bold mb-4">{isRegistering ? 'Create Account' : `Login`}</h3>
             <form onSubmit={handleAuth} className="d-flex flex-column gap-3">
-               {authPortal === 'partner' ? (
-                 <>
-                   <div className="form-group">
-                     <label className="small fw-bold text-muted mb-1">Phone Number</label>
-                     <input type="tel" className="form-control z-input border" placeholder="9876543210" value={authForm.phone} onChange={e => setAuthForm({...authForm, phone: e.target.value})} required disabled={otpSent} />
-                   </div>
-                   {otpSent && (
-                     <div className="form-group animate-up">
-                       <label className="small fw-bold text-muted mb-1">Enter 4-digit OTP</label>
-                       <input type="text" className="form-control z-input border text-center fs-4 tracking-widest" maxLength={4} value={authForm.otp} onChange={e => setAuthForm({...authForm, otp: e.target.value})} required />
-                     </div>
-                   )}
-                   <button type="submit" className="btn btn-z-primary w-100 py-3 mt-2">{otpSent ? 'Log In' : 'Send OTP'}</button>
-                 </>
-               ) : (
-                 <>
-                   {isRegistering && (
-                     <input type="text" className="form-control z-input border" placeholder="Full Name" value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} required />
-                   )}
-                   <input type="text" className="form-control z-input border" placeholder="Username" value={authForm.username} onChange={e => setAuthForm({...authForm, username: e.target.value})} required />
-                   <input type="password" className="form-control z-input border" placeholder="Password" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} required />
-                   <button type="submit" className="btn btn-z-primary w-100 py-3 mt-2">{isRegistering ? 'Create Account' : 'Login'}</button>
-                 </>
-               )}
+               <input type="text" className="form-control z-input border" placeholder="Username" value={authForm.username} onChange={e => setAuthForm({...authForm, username: e.target.value})} required />
+               <input type="password" className="form-control z-input border" placeholder="Password" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} required />
+               <button type="submit" className="btn btn-z-primary w-100 py-3">{isRegistering ? 'Register' : 'Login'}</button>
             </form>
-            <div className="text-center mt-4">
-                <button onClick={() => { setIsRegistering(!isRegistering); setOtpSent(false); }} className="btn text-danger small fw-bold">
-                    {isRegistering ? 'Already have an account? Log in' : 'New here? Create account'}
-                </button>
-            </div>
+            <button onClick={() => setIsRegistering(!isRegistering)} className="btn text-danger small fw-bold w-100 mt-3">
+              {isRegistering ? 'Already have an account? Login' : 'New here? Sign up'}
+            </button>
           </div>
         </div>
       </div>
@@ -322,25 +273,21 @@ const App = () => {
       <nav className="z-nav">
         <div className="container d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => setCurrentView('home')}>
-             <SparklesIcon className="text-danger" />
+             <SparklesIcon className="text-danger w-8 h-8" />
              <span className="h4 m-0 fw-black italic">FLAVORDISH</span>
           </div>
-          
           <div className="d-flex align-items-center gap-4">
              {currentUser ? (
-               <>
+               <div className="d-flex align-items-center gap-3">
                  <span className="small fw-bold text-muted">Hi, {currentUser.name}</span>
-                 <div className="position-relative cursor-pointer">
+                 <div className="position-relative cursor-pointer" onClick={() => setCurrentView('checkout')}>
                     <CartIcon className="text-muted" />
                     {cart.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '9px' }}>{cart.length}</span>}
                  </div>
                  <button onClick={() => { db.logout(); setCurrentUser(null); setCurrentView('home'); }} className="btn text-muted small fw-bold">Logout</button>
-               </>
+               </div>
              ) : (
-               <>
-                 <button onClick={() => setCurrentView('login')} className="btn text-muted fw-bold">Log in</button>
-                 <button onClick={() => setCurrentView('login')} className="btn btn-z-primary">Sign up</button>
-               </>
+               <button onClick={() => setCurrentView('login')} className="btn btn-z-primary">Sign up</button>
              )}
           </div>
         </div>
@@ -350,45 +297,22 @@ const App = () => {
         {currentView === 'home' && <HomeView />}
         {currentView === 'login' && <LoginPortal />}
         {currentView === 'restaurant' && <RestaurantView />}
+        {currentView === 'checkout' && (
+          <div className="container py-5 fade-in">
+             <div className="z-card bg-white p-5 mx-auto" style={{ maxWidth: '600px' }}>
+                <h2 className="fw-bold mb-4">Your Cart</h2>
+                {cart.map((item, idx) => (
+                  <div key={idx} className="d-flex justify-content-between py-2 border-bottom">
+                    <span>{item.quantity}x {item.name}</span>
+                    <span className="fw-bold">₹{item.price * item.quantity}</span>
+                  </div>
+                ))}
+                <div className="pt-3 h5 fw-bold d-flex justify-content-between"><span>Total</span><span className="text-danger">₹{cart.reduce((a, b) => a + (b.price * b.quantity), 0)}</span></div>
+                <button className="btn btn-z-primary w-100 py-3 mt-4" onClick={() => { alert('Order Placed!'); setCart([]); setCurrentView('home'); }}>Confirm Order</button>
+             </div>
+          </div>
+        )}
       </main>
-
-      <footer className="z-footer-dark">
-        <div className="container">
-           <div className="row g-5 mb-5">
-              <div className="col-md-3">
-                 <h2 className="h4 fw-black italic mb-4">FLAVORDISH</h2>
-                 <p className="text-secondary small">Ahmedabad's leading food discovery platform. Serving joy, one bite at a time.</p>
-              </div>
-              <div className="col-md-3">
-                 <h6 className="fw-bold mb-3">ABOUT</h6>
-                 <ul className="list-unstyled text-secondary small d-flex flex-column gap-2">
-                    <li>Who We Are</li>
-                    <li>Work With Us</li>
-                    <li>Investor Relations</li>
-                    <li>Report Fraud</li>
-                 </ul>
-              </div>
-              <div className="col-md-3">
-                 <h6 className="fw-bold mb-3">FOR RESTAURANTS</h6>
-                 <ul className="list-unstyled text-secondary small d-flex flex-column gap-2">
-                    <li>Partner With Us</li>
-                    <li>Apps For You</li>
-                 </ul>
-              </div>
-              <div className="col-md-3">
-                 <h6 className="fw-bold mb-3">SOCIAL LINKS</h6>
-                 <div className="d-flex gap-2">
-                    <div className="rounded-circle bg-white/10 p-2"><StarIcon className="w-4 h-4" /></div>
-                    <div className="rounded-circle bg-white/10 p-2"><ClockIcon className="w-4 h-4" /></div>
-                    <div className="rounded-circle bg-white/10 p-2"><TagIcon className="w-4 h-4" /></div>
-                 </div>
-              </div>
-           </div>
-           <div className="pt-5 border-top border-white/10 text-secondary x-small text-center">
-              By continuing past this page, you agree to our Terms of Service, Cookie Policy, Privacy Policy and Content Policies. All trademarks are properties of their respective owners. 2025 © FlavorDish Platform Ltd. All rights reserved.
-           </div>
-        </div>
-      </footer>
     </div>
   );
 };
