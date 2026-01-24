@@ -56,18 +56,24 @@
         }
         .animate-glow-pulse { animation: glowPulse 2s infinite; }
 
-        @keyframes boatFloat {
-          0%, 100% { transform: translate(180px, 160px) rotate(-3deg); }
-          50% { transform: translate(185px, 155px) rotate(5deg); }
-        }
-        .animate-boat-float { animation: boatFloat 5s ease-in-out infinite; }
-
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* Leaflet Dark Theme Overrides */
         .leaflet-container { background: #1a1a1a !important; }
         .dark-map .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+
+        /* Chart Customizations */
+        .recharts-cartesian-grid-horizontal line,
+        .recharts-cartesian-grid-vertical line {
+          stroke: #333;
+          stroke-opacity: 0.1;
+        }
+        .dark-mode .recharts-cartesian-grid-horizontal line,
+        .dark-mode .recharts-cartesian-grid-vertical line {
+          stroke: #444;
+          stroke-opacity: 0.3;
+        }
     </style>
     <script type="importmap">
     {
@@ -75,12 +81,13 @@
         "react/": "https://esm.sh/react@^19.2.3/",
         "react": "https://esm.sh/react@^19.2.3",
         "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "recharts": "https://esm.sh/recharts@2.12.7"
       }
     }
     </script>
 </head>
-<body>
+<body class="dark-mode">
     <div id="root"></div>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>

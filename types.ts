@@ -28,6 +28,7 @@ export interface Order {
   status: 'preparing' | 'picked_up' | 'delivering' | 'near_you' | 'delivered';
   timestamp: number;
   estimatedArrival: number;
+  specialInstructions?: string;
 }
 
 export interface AiRecommendation {
