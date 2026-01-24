@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { 
-  AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip
-} from 'recharts';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StarIcon, CartIcon, ClockIcon, SparklesIcon, TagIcon, RefreshIcon } from './components/Icons';
 import { db } from './services/databaseService';
+
+// --- Types ---
+import { Restaurant, Order, MenuItem } from './types';
 
 // --- Icons ---
 const MapPinIcon = ({ className = "w-5 h-5" }) => (
@@ -19,33 +19,27 @@ const BikeIcon = ({ className = "w-6 h-6" }) => (
 const ChevronRight = ({ className = "w-4 h-4" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
 );
-
-const Badge: React.FC<{ children: React.ReactNode; color?: 'red' | 'gold' | 'gray' }> = ({ children, color = 'red' }) => {
-  const styles = {
-    red: "bg-[#E23744] text-white",
-    gold: "bg-[#FFB300] text-white",
-    gray: "bg-gray-100 text-gray-500"
-  };
-  return <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${styles[color]}`}>{children}</span>;
-};
+const SearchIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+);
 
 const App = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentView, setCurrentView] = useState('home'); 
-  const [restaurants, setRestaurants] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [cart, setCart] = useState<any[]>([]);
   const [authPortal, setAuthPortal] = useState<'user' | 'partner' | 'fleet'>('user');
   const [isRegistering, setIsRegistering] = useState(false);
   const [authForm, setAuthForm] = useState({ username: '', password: '', phone: '', otp: '', name: '', email: '' });
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
+  const [selectedRes, setSelectedRes] = useState<Restaurant | null>(null);
 
   useEffect(() => {
     const user = db.getCurrentUser();
     if (user) {
       setCurrentUser(user);
-      if (user.role === 'admin') setCurrentView('partner-dashboard');
     }
     db.getRestaurants().then(setRestaurants);
     db.getOrders().then(setOrders);
@@ -56,7 +50,12 @@ const App = () => {
     setIsAuthLoading(true);
     try {
       if (isRegistering && authPortal === 'user') {
-        const user = await db.register({ username: authForm.username, password: authForm.password, name: authForm.name, email: authForm.email });
+        const user = await db.register({ 
+            username: authForm.username, 
+            password: authForm.password, 
+            name: authForm.name, 
+            email: authForm.email 
+        });
         setCurrentUser(user);
         setCurrentView('home');
       } else if (authPortal === 'partner') {
@@ -66,12 +65,12 @@ const App = () => {
         } else {
           const user = await db.loginWithPhone(authForm.phone, authForm.otp);
           setCurrentUser(user);
-          setCurrentView('partner-dashboard');
+          setCurrentView('home'); // Assume partner goes to home or specialized dash
         }
       } else {
         const user = await db.login(authForm.username, authForm.password);
         setCurrentUser(user);
-        setCurrentView(user.role === 'admin' ? 'partner-dashboard' : 'home');
+        setCurrentView('home');
       }
     } catch (err: any) {
       alert(err.message || 'Authentication failed');
@@ -80,72 +79,113 @@ const App = () => {
     }
   };
 
+  const addToCart = (item: MenuItem, restaurant: Restaurant) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.id === item.id);
+      if (existing) return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { ...item, quantity: 1, restaurantId: restaurant.id, restaurantName: restaurant.name }];
+    });
+  };
+
+  // --- Views ---
+
   const HomeView = () => (
-    <div className="animate-up">
-      {/* Search Header */}
-      <section className="relative h-[480px] flex items-center justify-center overflow-hidden bg-[#1c1c1c]">
-        <div className="absolute inset-0 z-0">
-          <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="w-full h-full object-cover opacity-30" alt="Hero" />
-        </div>
-        <div className="relative z-10 w-full max-w-4xl px-8 text-center">
-          <h1 className="text-7xl font-black text-white italic tracking-tighter mb-6">FLAVORDISH.</h1>
-          <p className="text-white/80 text-2xl font-medium mb-10">Find the best food in Ahmedabad</p>
-          <div className="bg-white rounded-xl flex flex-col md:flex-row items-center p-1.5 shadow-2xl">
-            <div className="flex items-center gap-3 px-6 py-3 border-r border-gray-100 w-full md:w-1/3">
-              <MapPinIcon className="text-[#E23744]" />
-              <input type="text" className="bg-transparent text-gray-800 font-medium border-none p-0 w-full" defaultValue="Ahmedabad" />
+    <div className="fade-in">
+      {/* Hero Section */}
+      <section className="z-hero">
+        <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="z-hero-bg" alt="Food background" />
+        <div className="z-hero-content">
+          <h1 className="text-white text-6xl font-black italic tracking-tighter mb-4">FLAVORDISH</h1>
+          <p className="text-white text-2xl font-medium mb-10 opacity-90">Find the best food, drinks, and more in Ahmedabad</p>
+          
+          <div className="z-search-bar mx-auto">
+            <div className="d-flex align-items-center ps-3 text-danger">
+              <MapPinIcon />
+              <input type="text" className="z-input" style={{ width: '150px' }} defaultValue="Ahmedabad" />
             </div>
-            <div className="flex items-center gap-4 px-6 py-3 w-full md:w-2/3">
-              <input type="text" className="bg-transparent text-gray-800 font-medium border-none p-0 w-full" placeholder="Search for restaurant, cuisine or a dish" />
+            <div className="z-input-separator"></div>
+            <div className="d-flex align-items-center flex-grow-1">
+              <SearchIcon className="text-muted" />
+              <input type="text" className="z-input" placeholder="Search for restaurant, cuisine or a dish" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-16 space-y-20">
-        <section>
-          <div className="flex justify-between items-end mb-8">
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Popular Collections</h2>
-            <button className="text-[#E23744] text-sm font-bold flex items-center gap-1">All collections <ChevronRight /></button>
+      <div className="container py-5">
+        {/* Collections */}
+        <section className="mb-5">
+          <div className="mb-4">
+            <h2 className="h3 fw-bold mb-1">Collections</h2>
+            <div className="d-flex justify-content-between align-items-center">
+              <p className="text-secondary m-0">Explore curated lists of top restaurants, cafes, and bars in Ahmedabad</p>
+              <button className="btn text-danger fw-600 p-0 d-flex align-items-center gap-1">All collections <ChevronRight /></button>
+            </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="row g-4">
             {[
-              { title: "Trending this Week", count: "12 Places", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800" },
-              { title: "Authentic Gujarati", count: "24 Places", img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800" },
-              { title: "Insta-worthy Spots", count: "18 Places", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=800" },
-              { title: "Late Night Cravings", count: "15 Places", img: "https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=800" },
-            ].map((col, i) => (
-              <div key={i} className="relative h-72 rounded-2xl overflow-hidden group cursor-pointer shadow-sm">
-                <img src={col.img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={col.title} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                <div className="absolute bottom-5 left-5 text-white">
-                  <h4 className="font-bold text-lg leading-tight">{col.title}</h4>
-                  <p className="text-xs opacity-80 flex items-center gap-1 mt-1">{col.count} <ChevronRight /></p>
+              { title: "Trending this Week", places: "12 Places", img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800" },
+              { title: "Best of Ahmedabad", places: "24 Places", img: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800" },
+              { title: "Newly Opened", places: "18 Places", img: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=800" },
+              { title: "Hidden Gems", places: "15 Places", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=800" },
+            ].map((c, i) => (
+              <div key={i} className="col-md-3">
+                <div className="collection-card">
+                  <img src={c.img} alt={c.title} />
+                  <div className="collection-overlay">
+                    <h5 className="m-0 fw-bold">{c.title}</h5>
+                    <p className="small m-0 d-flex align-items-center gap-1">{c.places} <ChevronRight /></p>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        <section>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-8">Top Restaurants near you</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {restaurants.map(res => (
-              <div key={res.id} onClick={() => setCurrentView('restaurant')} className="glass-card overflow-hidden group border-none">
-                <div className="h-56 relative overflow-hidden">
-                  <img src={res.image} className="w-full h-full object-cover" alt={res.name} />
-                  <div className="absolute top-4 right-4"><Badge color="gold">{res.rating} ★</Badge></div>
-                </div>
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-xl font-bold text-gray-900">{res.name}</h4>
-                    <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">{res.deliveryTime}</span>
+        {/* Localities */}
+        <section className="mb-5">
+          <h2 className="h3 fw-bold mb-4">Popular localities in and around Ahmedabad</h2>
+          <div className="row g-3">
+            {["Bodakdev", "Satellite", "Prahlad Nagar", "Vastrapur", "Gurukul", "Thaltej", "Navrangpura", "C G Road", "Ambawadi"].map((loc, i) => (
+              <div key={i} className="col-md-4">
+                <div className="locality-card">
+                  <div>
+                    <h6 className="m-0 fw-bold">{loc}</h6>
+                    <span className="small text-muted">352 places</span>
                   </div>
-                  <p className="text-sm text-gray-500 font-medium mb-4">{res.cuisine}</p>
-                  <div className="pt-4 border-t border-gray-50 flex justify-between items-center text-[11px] font-bold text-gray-400 uppercase tracking-wide">
-                    <span>Ahmedabad</span>
-                    <span className="text-[#E23744]">ORDER NOW</span>
+                  <ChevronRight className="text-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Main Food List */}
+        <section>
+          <h2 className="h3 fw-bold mb-4">Best Food in Ahmedabad</h2>
+          <div className="row g-4">
+            {restaurants.map(res => (
+              <div key={res.id} className="col-md-4">
+                <div className="z-card cursor-pointer h-100" onClick={() => { setSelectedRes(res); setCurrentView('restaurant'); }}>
+                  <div className="position-relative h-64">
+                    <img src={res.image} className="w-100 h-100 object-cover" alt={res.name} />
+                    <div className="position-absolute bottom-3 left-3">
+                      <span className="bg-white/90 text-danger px-2 py-1 rounded-1 fw-bold x-small">Flat ₹100 OFF</span>
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <div className="d-flex justify-content-between align-items-start mb-1">
+                      <h5 className="h6 fw-bold m-0 text-truncate">{res.name}</h5>
+                      <span className="z-rating-badge">{res.rating} <StarIcon className="w-2.5 h-2.5" /></span>
+                    </div>
+                    <div className="d-flex justify-content-between text-secondary small mb-3">
+                      <span>{res.cuisine}</span>
+                      <span>₹200 for two</span>
+                    </div>
+                    <div className="pt-3 border-top d-flex align-items-center gap-2">
+                       <img src="https://b.zmtcdn.com/data/o2_assets/0b6963158948277c99fbfe10f72d8c511632705482.png" className="w-5 h-5" alt="safety" />
+                       <span className="x-small text-muted">Follows all Max Safety measures to ensure your food is safe</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -156,84 +196,121 @@ const App = () => {
     </div>
   );
 
-  const LoginPortal = () => (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-4xl animate-up">
-        <div className="text-center mb-12">
-          <h2 className="text-5xl font-black text-[#E23744] italic tracking-tighter mb-2">FLAVORDISH.</h2>
-          <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Amdavad's Culinary Network</p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-6 mb-10">
-          {[
-            { id: 'user', label: 'Customer', icon: <CartIcon className="w-6 h-6" /> },
-            { id: 'partner', label: 'Partner', icon: <StoreIcon className="w-6 h-6" /> },
-            { id: 'fleet', label: 'Fleet', icon: <BikeIcon className="w-6 h-6" /> }
-          ].map(p => (
-            <button 
-              key={p.id}
-              onClick={() => { setAuthPortal(p.id as any); setOtpSent(false); setIsRegistering(false); }}
-              className={`p-8 rounded-3xl transition-all duration-300 flex flex-col items-center gap-4 ${authPortal === p.id ? 'bg-[#E23744] text-white shadow-lg' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
-            >
-              <div className="p-4 rounded-2xl bg-white/20">{p.icon}</div>
-              <h3 className="text-sm font-bold uppercase tracking-wider">{p.label}</h3>
-            </button>
-          ))}
-        </div>
-
-        <div className="max-w-md mx-auto glass-card !p-10 !shadow-lg border-none">
-          <form onSubmit={handleAuth} className="space-y-6">
-            <h4 className="text-center text-gray-900 font-black text-xl mb-4">
-              {isRegistering ? 'Join the Grid' : `${authPortal === 'user' ? 'Customer' : authPortal.charAt(0).toUpperCase() + authPortal.slice(1)} Login`}
-            </h4>
-            
-            <div className="space-y-4">
-              {authPortal === 'partner' ? (
-                <>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Phone Number</label>
-                    <div className="flex gap-2">
-                       <span className="bg-gray-50 border border-gray-100 rounded-xl p-3.5 font-bold text-gray-500">+91</span>
-                       <input type="tel" className="flex-grow" placeholder="Enter number" value={authForm.phone} onChange={e => setAuthForm({ ...authForm, phone: e.target.value })} required disabled={otpSent} />
-                    </div>
-                  </div>
-                  {otpSent && (
-                    <div className="space-y-1 animate-up">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">4-Digit OTP</label>
-                      <input type="text" className="w-full text-center text-2xl font-black tracking-[0.5em]" maxLength={4} value={authForm.otp} onChange={e => setAuthForm({ ...authForm, otp: e.target.value })} required />
-                    </div>
-                  )}
-                  <button type="submit" disabled={isAuthLoading} className="btn-primary-dish w-full">
-                    {isAuthLoading ? 'Please wait...' : otpSent ? 'Authorize Login' : 'Send OTP via SMS'}
-                  </button>
-                </>
-              ) : (
-                <>
-                  {isRegistering && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Full Name</label>
-                      <input type="text" className="w-full" placeholder="John Doe" value={authForm.name} onChange={e => setAuthForm({ ...authForm, name: e.target.value })} required />
-                    </div>
-                  )}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Username</label>
-                    <input type="text" className="w-full" value={authForm.username} onChange={e => setAuthForm({ ...authForm, username: e.target.value })} required />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Password</label>
-                    <input type="password" className="w-full" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} required />
-                  </div>
-                  <button type="submit" disabled={isAuthLoading} className="btn-primary-dish w-full">
-                    {isAuthLoading ? 'Connecting...' : isRegistering ? 'Complete Registration' : 'Login'}
-                  </button>
-                </>
-              )}
+  const RestaurantView = () => (
+    <div className="fade-in pb-5">
+      {selectedRes && (
+        <>
+          <div className="container py-4">
+            <nav className="small text-muted mb-4">
+              Home / India / Ahmedabad / {selectedRes.name}
+            </nav>
+            <div className="row g-4 mb-4">
+              <div className="col-md-8">
+                <h1 className="display-6 fw-bold mb-1">{selectedRes.name}</h1>
+                <p className="text-secondary mb-3">{selectedRes.cuisine}</p>
+                <div className="d-flex gap-4">
+                   <div className="d-flex align-items-center gap-2">
+                      <span className="z-rating-badge py-1 px-2">{selectedRes.rating} ★</span>
+                      <span className="small fw-bold">1.2k Delivery Ratings</span>
+                   </div>
+                </div>
+              </div>
+              <div className="col-md-4 text-end d-flex flex-column justify-content-center">
+                 <button className="btn btn-z-primary mb-2">Order Online</button>
+                 <button className="btn btn-z-outline">Book a Table</button>
+              </div>
             </div>
-          </form>
-          <div className="text-center mt-6">
-            <button onClick={() => { setIsRegistering(!isRegistering); setOtpSent(false); }} className="text-[#E23744] text-xs font-bold hover:underline">
-              {isRegistering ? 'Already have an account? Login' : 'No account? Register as Customer'}
-            </button>
+          </div>
+
+          <div className="bg-section-light py-5">
+            <div className="container">
+              <div className="row g-4">
+                {selectedRes.menu.map(item => (
+                  <div key={item.id} className="col-md-6">
+                    <div className="z-card bg-white p-3 d-flex gap-4">
+                      <div className="flex-grow-1">
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                           <span className="border border-success rounded-circle w-3 h-3 d-inline-block"></span>
+                           <span className="x-small text-warning fw-bold">MUST TRY</span>
+                        </div>
+                        <h6 className="fw-bold mb-1">{item.name}</h6>
+                        <span className="z-rating-badge bg-transparent text-warning border border-warning mb-2">★ ★ ★ ★ ★</span>
+                        <p className="fw-bold mb-2">₹{item.price}</p>
+                        <p className="small text-secondary line-clamp-2">{item.description}</p>
+                      </div>
+                      <div className="position-relative w-32 h-32 flex-shrink-0">
+                        <img src={item.image} className="w-100 h-100 object-cover rounded-3" alt={item.name} />
+                        <button 
+                            onClick={() => addToCart(item, selectedRes)}
+                            className="btn btn-z-primary btn-sm position-absolute bottom-0 start-50 translate-middle-x mb-[-12px] shadow-lg border border-white"
+                        >
+                            ADD +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const LoginPortal = () => (
+    <div className="min-h-screen bg-light d-flex align-items-center justify-content-center p-4">
+      <div className="z-card bg-white w-100 shadow-2xl overflow-hidden" style={{ maxWidth: '800px' }}>
+        <div className="row g-0">
+          <div className="col-md-5 bg-dark p-5 text-white d-flex flex-col justify-between">
+            <div>
+              <h2 className="display-6 fw-black italic mb-4">FLAVORDISH</h2>
+              <p className="opacity-70">A smarter way to discover and order the best food in Ahmedabad.</p>
+            </div>
+            <div className="d-flex flex-col gap-3">
+              <div className="locality-card bg-white/10 border-white/20 text-white cursor-pointer" onClick={() => setAuthPortal('user')}>
+                <span>Customer Portal</span>
+                <ChevronRight />
+              </div>
+              <div className="locality-card bg-white/10 border-white/20 text-white cursor-pointer" onClick={() => setAuthPortal('partner')}>
+                <span>Partner Console</span>
+                <ChevronRight />
+              </div>
+            </div>
+          </div>
+          <div className="col-md-7 p-5">
+            <h3 className="fw-bold mb-4">{isRegistering ? 'Create Account' : `Login to ${authPortal}`}</h3>
+            <form onSubmit={handleAuth} className="d-flex flex-column gap-3">
+               {authPortal === 'partner' ? (
+                 <>
+                   <div className="form-group">
+                     <label className="small fw-bold text-muted mb-1">Phone Number</label>
+                     <input type="tel" className="form-control z-input border" placeholder="9876543210" value={authForm.phone} onChange={e => setAuthForm({...authForm, phone: e.target.value})} required disabled={otpSent} />
+                   </div>
+                   {otpSent && (
+                     <div className="form-group animate-up">
+                       <label className="small fw-bold text-muted mb-1">Enter 4-digit OTP</label>
+                       <input type="text" className="form-control z-input border text-center fs-4 tracking-widest" maxLength={4} value={authForm.otp} onChange={e => setAuthForm({...authForm, otp: e.target.value})} required />
+                     </div>
+                   )}
+                   <button type="submit" className="btn btn-z-primary w-100 py-3 mt-2">{otpSent ? 'Log In' : 'Send OTP'}</button>
+                 </>
+               ) : (
+                 <>
+                   {isRegistering && (
+                     <input type="text" className="form-control z-input border" placeholder="Full Name" value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} required />
+                   )}
+                   <input type="text" className="form-control z-input border" placeholder="Username" value={authForm.username} onChange={e => setAuthForm({...authForm, username: e.target.value})} required />
+                   <input type="password" className="form-control z-input border" placeholder="Password" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} required />
+                   <button type="submit" className="btn btn-z-primary w-100 py-3 mt-2">{isRegistering ? 'Create Account' : 'Login'}</button>
+                 </>
+               )}
+            </form>
+            <div className="text-center mt-4">
+                <button onClick={() => { setIsRegistering(!isRegistering); setOtpSent(false); }} className="btn text-danger small fw-bold">
+                    {isRegistering ? 'Already have an account? Log in' : 'New here? Create account'}
+                </button>
+            </div>
           </div>
         </div>
       </div>
@@ -242,85 +319,74 @@ const App = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="nav-fixed fixed top-0 left-0 right-0 z-[1000] py-4">
-        <div className="container mx-auto px-6 flex justify-between items-center">
-          <div onClick={() => setCurrentView('home')} className="flex items-center gap-2 cursor-pointer">
-            <SparklesIcon className="text-[#E23744] w-6 h-6"/>
-            <span className="text-2xl font-black text-gray-900 tracking-tighter italic">FLAVORDISH.</span>
+      <nav className="z-nav">
+        <div className="container d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center gap-2 cursor-pointer" onClick={() => setCurrentView('home')}>
+             <SparklesIcon className="text-danger" />
+             <span className="h4 m-0 fw-black italic">FLAVORDISH</span>
           </div>
-          <div className="flex items-center gap-8">
-            {currentUser ? (
-              <div className="flex items-center gap-5">
-                 <span className="text-sm font-bold text-gray-700">Hi, {currentUser.name}</span>
-                 <button onClick={() => { db.logout(); setCurrentUser(null); setCurrentView('home'); }} className="btn-outline-dish py-2 px-4 text-xs">Logout</button>
-              </div>
-            ) : (
-              <button onClick={() => setCurrentView('login')} className="btn-primary-dish py-2.5 px-6 text-sm">Join the Club</button>
-            )}
+          
+          <div className="d-flex align-items-center gap-4">
+             {currentUser ? (
+               <>
+                 <span className="small fw-bold text-muted">Hi, {currentUser.name}</span>
+                 <div className="position-relative cursor-pointer">
+                    <CartIcon className="text-muted" />
+                    {cart.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '9px' }}>{cart.length}</span>}
+                 </div>
+                 <button onClick={() => { db.logout(); setCurrentUser(null); setCurrentView('home'); }} className="btn text-muted small fw-bold">Logout</button>
+               </>
+             ) : (
+               <>
+                 <button onClick={() => setCurrentView('login')} className="btn text-muted fw-bold">Log in</button>
+                 <button onClick={() => setCurrentView('login')} className="btn btn-z-primary">Sign up</button>
+               </>
+             )}
           </div>
         </div>
       </nav>
 
-      <div className="pt-20">
+      <main>
         {currentView === 'home' && <HomeView />}
         {currentView === 'login' && <LoginPortal />}
-        {currentView === 'partner-dashboard' && (
-          <div className="container mx-auto px-6 py-12">
-            <div className="flex justify-between items-center mb-10">
-              <h2 className="text-4xl font-black text-gray-900">Partner <span className="text-[#E23744]">Console</span></h2>
-              <Badge color="gold">Verified Merchant</Badge>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="glass-card p-8 col-span-2">
-                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Revenue Overview</h4>
-                <div className="h-64">
-                   <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={orders.map((o, i) => ({ n: i, v: o.total }))}>
-                         <Area type="monotone" dataKey="v" stroke="#E23744" strokeWidth={3} fill="#E23744" fillOpacity={0.05} />
-                      </AreaChart>
-                   </ResponsiveContainer>
-                </div>
-              </div>
-              <div className="space-y-8">
-                <div className="glass-card p-8 bg-[#E23744] text-white border-none">
-                  <h4 className="text-sm font-bold opacity-80 uppercase tracking-widest mb-4">Total Orders</h4>
-                  <p className="text-5xl font-black">{orders.length}</p>
-                </div>
-                <div className="glass-card p-8">
-                  <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Active Fleet</h4>
-                  <p className="text-4xl font-black text-gray-900">12 Riders</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        {currentView === 'restaurant' && <RestaurantView />}
+      </main>
 
-      <footer className="bg-[#1c1c1c] text-white py-16 mt-20">
-        <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div>
-            <h3 className="text-2xl font-black italic mb-6">FLAVORDISH.</h3>
-            <p className="text-white/40 text-sm leading-relaxed">Making Amdavadi food culture accessible through smart logistics and elite curation.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-8 md:col-span-2">
-            <div className="space-y-4">
-              <h5 className="text-xs font-bold uppercase tracking-widest text-white/20">Company</h5>
-              <ul className="space-y-2 text-sm text-white/60">
-                <li className="hover:text-white cursor-pointer">About Us</li>
-                <li className="hover:text-white cursor-pointer">Careers</li>
-                <li className="hover:text-white cursor-pointer">Press</li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h5 className="text-xs font-bold uppercase tracking-widest text-white/20">Partner</h5>
-              <ul className="space-y-2 text-sm text-white/60">
-                <li className="hover:text-white cursor-pointer">Merchant Support</li>
-                <li className="hover:text-white cursor-pointer">Rider Network</li>
-                <li className="hover:text-white cursor-pointer">Brand Toolkit</li>
-              </ul>
-            </div>
-          </div>
+      <footer className="z-footer-dark">
+        <div className="container">
+           <div className="row g-5 mb-5">
+              <div className="col-md-3">
+                 <h2 className="h4 fw-black italic mb-4">FLAVORDISH</h2>
+                 <p className="text-secondary small">Ahmedabad's leading food discovery platform. Serving joy, one bite at a time.</p>
+              </div>
+              <div className="col-md-3">
+                 <h6 className="fw-bold mb-3">ABOUT</h6>
+                 <ul className="list-unstyled text-secondary small d-flex flex-column gap-2">
+                    <li>Who We Are</li>
+                    <li>Work With Us</li>
+                    <li>Investor Relations</li>
+                    <li>Report Fraud</li>
+                 </ul>
+              </div>
+              <div className="col-md-3">
+                 <h6 className="fw-bold mb-3">FOR RESTAURANTS</h6>
+                 <ul className="list-unstyled text-secondary small d-flex flex-column gap-2">
+                    <li>Partner With Us</li>
+                    <li>Apps For You</li>
+                 </ul>
+              </div>
+              <div className="col-md-3">
+                 <h6 className="fw-bold mb-3">SOCIAL LINKS</h6>
+                 <div className="d-flex gap-2">
+                    <div className="rounded-circle bg-white/10 p-2"><StarIcon className="w-4 h-4" /></div>
+                    <div className="rounded-circle bg-white/10 p-2"><ClockIcon className="w-4 h-4" /></div>
+                    <div className="rounded-circle bg-white/10 p-2"><TagIcon className="w-4 h-4" /></div>
+                 </div>
+              </div>
+           </div>
+           <div className="pt-5 border-top border-white/10 text-secondary x-small text-center">
+              By continuing past this page, you agree to our Terms of Service, Cookie Policy, Privacy Policy and Content Policies. All trademarks are properties of their respective owners. 2025 © FlavorDish Platform Ltd. All rights reserved.
+           </div>
         </div>
       </footer>
     </div>
