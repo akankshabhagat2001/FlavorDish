@@ -1,4 +1,3 @@
-
 import { RESTAURANTS as INITIAL_RESTAURANTS } from '../data/mockData.js';
 
 const STORAGE_KEYS = {
@@ -53,7 +52,26 @@ class DatabaseService {
   async saveRestaurant(restaurant) {
     await this.delay(500);
     const restaurants = await this.getRestaurants();
-    const updated = [restaurant, ...restaurants];
+    const index = restaurants.findIndex(r => r.id === restaurant.id);
+    
+    let updated;
+    if (index > -1) {
+      // Update existing
+      updated = [...restaurants];
+      updated[index] = { ...updated[index], ...restaurant };
+    } else {
+      // Add new
+      updated = [{ ...restaurant, id: Date.now().toString(), menu: restaurant.menu || [] }, ...restaurants];
+    }
+    
+    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(updated));
+    return updated;
+  }
+
+  async deleteRestaurant(id) {
+    await this.delay(400);
+    const restaurants = await this.getRestaurants();
+    const updated = restaurants.filter(r => r.id !== id);
     localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(updated));
     return updated;
   }
