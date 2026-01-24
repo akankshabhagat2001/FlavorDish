@@ -36,6 +36,9 @@ const GpsIcon = ({ className = "w-5 h-5" }) => (
 const WarningIcon = ({ className = "w-4 h-4" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
 );
+const ChartIcon = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+);
 
 // --- Base Styled Components ---
 
@@ -478,25 +481,63 @@ const App = () => {
        <div className="absolute inset-0 opacity-20 pointer-events-none scale-110 blur-xl">
           <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2000" className="w-full h-full object-cover" />
        </div>
-       <div className="w-full max-w-xl p-16 animate-reveal z-10 glass-panel rounded-[4rem] bg-[#0f0f0f]">
-          <div className="text-center mb-16">
+       
+       <div className="container max-w-7xl z-10 animate-reveal">
+          <div className="text-center mb-20">
              <div className="bg-[#ff2d2d]/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 animate-soft-pulse border border-[#ff2d2d]/40">
                 <SparklesIcon className="w-12 h-12 text-[#ff2d2d]" />
              </div>
-             <h2 className="text-5xl font-black tracking-tighter mb-4 text-[#ff2d2d]">FLAVORDISH.</h2>
-             <p className="text-white/60 text-xs font-black uppercase tracking-[0.4em]">Establish Secure Link</p>
+             <h2 className="text-7xl font-black tracking-tighter mb-4 text-[#ff2d2d]">FLAVORDISH.</h2>
+             <p className="text-white/60 text-xs font-black uppercase tracking-[0.4em]">Establish Secure Link to the Fleet</p>
           </div>
-          <form onSubmit={handleLogin} className="space-y-6">
-             <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#ff2d2d] ml-4">Credential ID</p>
-                <input type="text" className="w-full bg-white/10 border border-white/20 rounded-3xl py-5 px-8 focus:border-[#ff2d2d] outline-none text-white transition-all text-lg font-bold" placeholder="ID (user / admin)" onChange={e => setAuthForm({...authForm, username: e.target.value})} required />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+             {/* Customer Portal */}
+             <div className="glass-card !bg-white p-16 rounded-[4rem] shadow-[0_0_80px_rgba(255,45,45,0.15)] flex flex-col border-none">
+                <div className="text-center mb-12">
+                   <div className="bg-[#ff2d2d]/10 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                      <CartIcon className="text-[#ff2d2d] w-10 h-10" />
+                   </div>
+                   <h3 className="text-4xl font-black text-[#050505] tracking-tighter uppercase">Customer Portal</h3>
+                   <p className="text-[#050505]/60 text-[10px] font-black uppercase tracking-widest mt-2">Personal Gourmet Access</p>
+                </div>
+                
+                <form onSubmit={handleLogin} className="space-y-6 flex-grow">
+                   <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#0a0a0a]/60 ml-4">Credential ID</p>
+                      <input type="text" className="w-full bg-[#050505]/5 border border-[#050505]/10 rounded-3xl py-5 px-8 focus:border-[#ff2d2d] outline-none text-[#050505] transition-all text-lg font-bold" placeholder="user" onChange={e => setAuthForm({...authForm, username: e.target.value})} required />
+                   </div>
+                   <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#0a0a0a]/60 ml-4">Passphrase</p>
+                      <input type="password" className="w-full bg-[#050505]/5 border border-[#050505]/10 rounded-3xl py-5 px-8 focus:border-[#ff2d2d] outline-none text-[#050505] transition-all text-lg font-bold" placeholder="pass" onChange={e => setAuthForm({...authForm, password: e.target.value})} required />
+                   </div>
+                   <button type="submit" disabled={isAuthLoading} className="btn-obsidian w-full mt-6 h-20 text-xl !shadow-none hover:bg-black transition-colors">LOGIN AS GUEST</button>
+                </form>
              </div>
-             <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#ff2d2d] ml-4">Passphrase</p>
-                <input type="password" className="w-full bg-white/10 border border-white/20 rounded-3xl py-5 px-8 focus:border-[#ff2d2d] outline-none text-white transition-all text-lg font-bold" placeholder="Code (pass / admin)" onChange={e => setAuthForm({...authForm, password: e.target.value})} required />
+
+             {/* Partner Access */}
+             <div className="glass-card !bg-white p-16 rounded-[4rem] shadow-[0_0_80px_rgba(255,45,45,0.15)] flex flex-col border-none">
+                <div className="text-center mb-12">
+                   <div className="bg-[#ff2d2d]/10 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                      <ChartIcon className="text-[#ff2d2d] w-10 h-10" />
+                   </div>
+                   <h3 className="text-4xl font-black text-[#050505] tracking-tighter uppercase">Partner Access</h3>
+                   <p className="text-[#050505]/60 text-[10px] font-black uppercase tracking-widest mt-2">Fleet Management Engine</p>
+                </div>
+                
+                <form onSubmit={handleLogin} className="space-y-6 flex-grow">
+                   <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#0a0a0a]/60 ml-4">Fleet Admin ID</p>
+                      <input type="text" className="w-full bg-[#050505]/5 border border-[#050505]/10 rounded-3xl py-5 px-8 focus:border-[#ff2d2d] outline-none text-[#050505] transition-all text-lg font-bold" placeholder="admin" onChange={e => setAuthForm({...authForm, username: e.target.value})} required />
+                   </div>
+                   <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#0a0a0a]/60 ml-4">Secure Key</p>
+                      <input type="password" className="w-full bg-[#050505]/5 border border-[#050505]/10 rounded-3xl py-5 px-8 focus:border-[#ff2d2d] outline-none text-[#050505] transition-all text-lg font-bold" placeholder="admin" onChange={e => setAuthForm({...authForm, password: e.target.value})} required />
+                   </div>
+                   <button type="submit" disabled={isAuthLoading} className="btn-obsidian w-full mt-6 h-20 text-xl !shadow-none bg-[#050505] hover:bg-[#ff2d2d] transition-colors">INITIATE FLEET LOGIN</button>
+                </form>
              </div>
-             <button type="submit" disabled={isAuthLoading} className="btn-obsidian w-full mt-6 shadow-[0_0_50px_rgba(255,45,45,0.4)] h-20 text-xl">Connect to Fleet</button>
-          </form>
+          </div>
        </div>
     </div>
   );
