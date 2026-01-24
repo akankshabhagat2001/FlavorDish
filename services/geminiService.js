@@ -166,47 +166,22 @@ export const enhanceMenuDescriptions = async (menuItems) => {
 };
 
 /**
- * Enhances a single menu item description to be more creative and appetizing.
- */
-export const enhanceSingleItemDescription = async (itemName, itemDescription) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `You are a world-class culinary copywriter. Your task is to write a single, short, and incredibly mouth-watering description for a dish common in Ahmedabad. 
-      
-      Dish Name: "${itemName}"
-      Base Info: "${itemDescription}"
-      
-      Instructions:
-      - Be creative, sensory, and evocative.
-      - Mention textures (crispy, creamy, tender), aromas, or specific high-quality ingredients.
-      - Keep it concise (maximum 160 characters).
-      - Do not use hashtags or emojis.
-      - Return ONLY the enhanced description text.`,
-    });
-
-    return response.text?.trim() || itemDescription;
-  } catch (error) {
-    console.error("Single Item AI Error:", error);
-    return itemDescription;
-  }
-};
-
-/**
- * Uses Gemini 2.5 Maps Grounding to find real-world food spots in Ahmedabad.
+ * Uses Gemini 2.5 Maps Grounding for live location-based food discovery.
  */
 export const getNearbyFoodDiscovery = async (query, latLng) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Find great food options in Ahmedabad for: "${query}". Provide a helpful description and focus on highly-rated Amdavadi places.`,
+      contents: `You are a local food expert in Ahmedabad. 
+      Find the best real-world places for: "${query}". 
+      Focus on highly-rated spots near the user's current coordinates. 
+      Provide a helpful summary and mention unique features of these places.`,
       config: {
         tools: [{ googleMaps: {} }],
         toolConfig: {
           retrievalConfig: {
-            latLng: latLng || { latitude: 23.0225, longitude: 72.5714 } // Ahmedabad coords
+            latLng: latLng || { latitude: 23.0225, longitude: 72.5714 } // Default to Ahmedabad city center
           }
         }
       },
