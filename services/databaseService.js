@@ -1,3 +1,4 @@
+
 import { RESTAURANTS as INITIAL_RESTAURANTS } from '../data/mockData.js';
 
 const STORAGE_KEYS = {
@@ -139,6 +140,19 @@ class DatabaseService {
     const orders = await this.getOrders();
     const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
     localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(updated));
+    return updated;
+  }
+
+  // --- AI Enhancements ---
+  async getMenuEnhancements() {
+    const data = localStorage.getItem(STORAGE_KEYS.ENHANCEMENTS);
+    return data ? JSON.parse(data) : {};
+  }
+
+  async saveMenuEnhancements(enhancements) {
+    const existing = await this.getMenuEnhancements();
+    const updated = { ...existing, ...enhancements };
+    localStorage.setItem(STORAGE_KEYS.ENHANCEMENTS, JSON.stringify(updated));
     return updated;
   }
 }
