@@ -6,7 +6,9 @@ const STORAGE_KEYS = {
   AUTH: 'flavordish_db_auth',
   RESTAURANTS: 'flavordish_db_restaurants',
   USERS: 'flavordish_db_users',
-  ENHANCEMENTS: 'flavordish_db_menu_enhancements'
+  ENHANCEMENTS: 'flavordish_db_menu_enhancements',
+  PARTNER_INVITES: 'flavordish_db_partner_invites',
+  NOTIFICATIONS: 'flavordish_db_notifications'
 };
 
 class DatabaseService {
@@ -26,6 +28,23 @@ class DatabaseService {
       return safeUser;
     }
     throw new Error("Invalid credentials");
+  }
+
+  async loginWithPhone(phone, otp) {
+    await this.delay(800);
+    // Simulation: Any 4-digit OTP works for demo
+    if (otp.length !== 4) throw new Error("Invalid OTP");
+    
+    const users = this.getUsers();
+    let user = users.find(u => u.phone === phone);
+    
+    if (!user) {
+      // Create a temporary partner if not exists for demo
+      user = { id: Date.now().toString(), phone, role: 'partner', name: 'Partner ' + phone.slice(-4) };
+    }
+    
+    localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(user));
+    return user;
   }
 
   async register(userData) {
@@ -61,7 +80,43 @@ class DatabaseService {
     localStorage.removeItem(STORAGE_KEYS.AUTH);
   }
 
-  // --- Restaurants & Menu Items ---
+  // --- Admin Logic: Partners & Mail ---
+  async getPartnerInvites() {
+    const data = localStorage.getItem(STORAGE_KEYS.PARTNER_INVITES);
+    return data ? JSON.parse(data) : [];
+  }
+
+  async sendPartnerInvite(email, restaurantName) {
+    await this.delay(1000);
+    const invites = await this.getPartnerInvites();
+    const newInvite = { 
+      id: Date.now().toString(), 
+      email, 
+      restaurantName, 
+      status: 'Email Sent', 
+      timestamp: Date.now() 
+    };
+    invites.push(newInvite);
+    localStorage.setItem(STORAGE_KEYS.PARTNER_INVITES, JSON.stringify(invites));
+    
+    // Log Notification (Simulated Auto-mail)
+    this.addNotification(`System: Onboarding email automatically dispatched to ${email} for ${restaurantName}.`);
+    return newInvite;
+  }
+
+  addNotification(message) {
+    const data = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]';
+    const notifications = JSON.parse(data);
+    notifications.unshift({ message, timestamp: Date.now() });
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications.slice(0, 20)));
+  }
+
+  getNotifications() {
+    const data = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
+    return data ? JSON.parse(data) : [];
+  }
+
+  // --- Restaurants ---
   async getRestaurants() {
     await this.delay(200);
     const data = localStorage.getItem(STORAGE_KEYS.RESTAURANTS);
@@ -87,41 +142,6 @@ class DatabaseService {
     return updated;
   }
 
-  async deleteRestaurant(id) {
-    const restaurants = await this.getRestaurants();
-    const updated = restaurants.filter(r => r.id !== id);
-    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(updated));
-    return updated;
-  }
-
-  async saveMenuItem(restaurantId, item) {
-    const restaurants = await this.getRestaurants();
-    const rIndex = restaurants.findIndex(r => r.id === restaurantId);
-    if (rIndex === -1) return restaurants;
-
-    const restaurant = restaurants[rIndex];
-    const mIndex = restaurant.menu.findIndex(m => m.id === item.id);
-
-    if (mIndex > -1) {
-      restaurant.menu[mIndex] = item;
-    } else {
-      restaurant.menu.push({ ...item, id: `m_${Date.now()}` });
-    }
-
-    localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(restaurants));
-    return restaurants;
-  }
-
-  async deleteMenuItem(restaurantId, itemId) {
-    const restaurants = await this.getRestaurants();
-    const rIndex = restaurants.findIndex(r => r.id === restaurantId);
-    if (rIndex > -1) {
-      restaurants[rIndex].menu = restaurants[rIndex].menu.filter(m => m.id !== itemId);
-      localStorage.setItem(STORAGE_KEYS.RESTAURANTS, JSON.stringify(restaurants));
-    }
-    return restaurants;
-  }
-
   // --- Orders ---
   async getOrders() {
     const data = localStorage.getItem(STORAGE_KEYS.ORDERS);
@@ -140,19 +160,6 @@ class DatabaseService {
     const orders = await this.getOrders();
     const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
     localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(updated));
-    return updated;
-  }
-
-  // --- AI Enhancements ---
-  async getMenuEnhancements() {
-    const data = localStorage.getItem(STORAGE_KEYS.ENHANCEMENTS);
-    return data ? JSON.parse(data) : {};
-  }
-
-  async saveMenuEnhancements(enhancements) {
-    const existing = await this.getMenuEnhancements();
-    const updated = { ...existing, ...enhancements };
-    localStorage.setItem(STORAGE_KEYS.ENHANCEMENTS, JSON.stringify(updated));
     return updated;
   }
 }
