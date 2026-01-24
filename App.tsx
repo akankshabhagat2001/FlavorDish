@@ -48,15 +48,16 @@ const GlassCard: React.FC<{ children: React.ReactNode; className?: string; onCli
   </div>
 );
 
-const Badge: React.FC<{ children: React.ReactNode; color?: string }> = ({ children, color = "primary" }) => {
+const Badge: React.FC<{ children: React.ReactNode; color?: string; pulse?: boolean }> = ({ children, color = "primary", pulse = false }) => {
   const styles: any = {
     primary: "bg-[#ff2d2d] text-white",
     gold: "bg-[#ffc107] text-black",
-    ghost: "bg-white/20 text-white backdrop-blur-md border border-white/10",
+    ghost: "bg-white/10 text-white backdrop-blur-md border border-white/10",
   };
   return (
-    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ${styles[color] || styles.primary}`}>
-      {children}
+    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] relative ${styles[color] || styles.primary}`}>
+      {pulse && <span className="absolute inset-0 rounded-full bg-inherit animate-ping opacity-50"></span>}
+      <span className="relative z-10">{children}</span>
     </span>
   );
 };
@@ -72,30 +73,51 @@ const InteractiveMap = ({ center, markers = [], polyline = [], height = '450px',
     if (!L) return;
     
     if (!mapRef.current) {
-      mapRef.current = L.map(containerRef.current, { center: center || [23.0225, 72.5714], zoom: zoom, zoomControl: false, attributionControl: false });
+      mapRef.current = L.map(containerRef.current, { 
+        center: center || [23.0225, 72.5714], 
+        zoom: zoom, 
+        zoomControl: false, 
+        attributionControl: false 
+      });
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapRef.current);
     } else {
       mapRef.current.setView(center, zoom);
     }
     
     const map = mapRef.current;
-    map.eachLayer((layer: any) => { if (layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer); });
+    map.eachLayer((layer: any) => { 
+      if (layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer); 
+    });
     
     markers.forEach((m: any) => {
       const icon = L.divIcon({
         className: 'custom-div-icon',
-        html: `<div class="bg-${m.color || 'danger'} p-2 rounded-circle border-2 border-white shadow-lg d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px; font-size: 14px;">${m.label || ''}</div>`,
-        iconSize: [32, 32], iconAnchor: [16, 16]
+        html: `
+          <div class="relative flex items-center justify-center" style="width: 48px; height: 48px;">
+            ${m.pulse ? '<div class="absolute inset-0 rounded-full bg-red-500 animate-ping-slow opacity-40"></div>' : ''}
+            <div class="relative z-10 bg-${m.color || 'red-500'} p-2.5 rounded-full border-2 border-white shadow-2xl flex items-center justify-center text-white" style="width: 36px; height: 36px; font-size: 14px;">
+              ${m.label || ''}
+            </div>
+          </div>`,
+        iconSize: [48, 48], 
+        iconAnchor: [24, 24]
       });
       L.marker(m.position, { icon }).addTo(map);
     });
     
-    if (polyline.length > 0) L.polyline(polyline, { color: '#ff2d2d', weight: 3, opacity: 0.8 }).addTo(map);
+    if (polyline.length > 0) {
+      L.polyline(polyline, { 
+        color: '#ff2d2d', 
+        weight: 3, 
+        opacity: 0.6,
+        dashArray: '10, 10'
+      }).addTo(map);
+    }
     
     return () => {};
   }, [markers, polyline, center, zoom]);
 
-  return <div ref={containerRef} className="w-100 h-100 rounded-5 overflow-hidden border border-white/10" style={{ minHeight: height }} />;
+  return <div ref={containerRef} className="w-100 h-100 rounded-[3rem] overflow-hidden border border-white/10" style={{ minHeight: height }} />;
 };
 
 // --- Sub-components ---
@@ -162,8 +184,8 @@ const LiveSupportPanel = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 <HeadsetIcon className="w-6 h-6" />
             </div>
             <div>
-              <h6 className="m-0 font-black text-xl tracking-tighter">AI Concierge</h6>
-              <span className="text-[10px] opacity-90 font-black uppercase tracking-widest">{status === 'active' ? '● Encrypted Live' : 'Initializing...'}</span>
+              <h6 className="m-0 font-black text-xl tracking-tighter text-white">AI Concierge</h6>
+              <span className="text-[10px] opacity-90 font-black uppercase tracking-widest text-white">{status === 'active' ? '● Encrypted Live' : 'Initializing...'}</span>
             </div>
           </div>
           <button className="text-white hover:scale-110 transition-transform" onClick={onClose}><XIcon /></button>
@@ -216,7 +238,7 @@ const RestaurantCard: React.FC<{ restaurant: Restaurant; onClick: () => void }> 
          <div>
             <h4 className="text-3xl font-black text-white tracking-tighter leading-none mb-1 shadow-sm">{restaurant.name}</h4>
             <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest">
-               <ClockIcon className="w-3 h-3" /> {restaurant.deliveryTime}
+               <ClockIcon className="w-3 h-3 text-white" /> {restaurant.deliveryTime}
             </div>
          </div>
          <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center border border-white/30 group-hover:bg-[#ff2d2d] group-hover:border-[#ff2d2d] transition-all">
@@ -243,6 +265,9 @@ const App = () => {
   const [addressError, setAddressError] = useState<string | null>(null);
   const [isUsingGps, setIsUsingGps] = useState(true);
   const [userCoords, setUserCoords] = useState({ latitude: 23.0225, longitude: 72.5714 });
+
+  // Tracking Simulation State
+  const [trackingTick, setTrackingTick] = useState(0);
 
   // AI Enhanced State
   const [enhancedDescriptions, setEnhancedDescriptions] = useState<Record<string, string>>({});
@@ -273,6 +298,38 @@ const App = () => {
       );
     }
   }, []);
+
+  // Tracking Simulation Loop
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTrackingTick(prev => (prev + 1) % 1000);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Helper to calculate tracking visuals
+  const getOrderTrackingData = (order: Order) => {
+    // Simulated Restaurant Coords (nearby)
+    const restCoords = [userCoords.latitude + 0.008, userCoords.longitude + 0.006];
+    const userPos = [userCoords.latitude, userCoords.longitude];
+    
+    let courierPos = [...restCoords];
+    let progress = 0;
+
+    if (order.status === 'preparing') progress = 0.05;
+    else if (order.status === 'picked_up') progress = 0.15;
+    else if (order.status === 'delivering') progress = 0.5 + (Math.sin(trackingTick * 0.1) * 0.1);
+    else if (order.status === 'near_you') progress = 0.9 + (Math.sin(trackingTick * 0.05) * 0.05);
+    else if (order.status === 'delivered') progress = 1.0;
+
+    // Linear interpolation between restaurant and user
+    courierPos = [
+      restCoords[0] + (userPos[0] - restCoords[0]) * progress,
+      restCoords[1] + (userPos[1] - restCoords[1]) * progress
+    ];
+
+    return { restCoords, userPos, courierPos, isActive: order.status !== 'delivered' };
+  };
 
   // Real-time Address Validation
   const validateAddress = (val: string) => {
@@ -540,7 +597,6 @@ const App = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
                   {restaurants.map(res => (
-                    // Fix: Removed undefined setSelectedRestaurant and used setMgmtRestaurant
                     <RestaurantCard key={res.id} restaurant={res} onClick={() => { setMgmtRestaurant(res); setCurrentView('restaurant-detail'); }} />
                   ))}
                 </div>
@@ -689,7 +745,7 @@ const App = () => {
                       <div className="flex-grow rounded-[3rem] overflow-hidden border-2 border-white/10 relative mb-12 shadow-inner">
                          <InteractiveMap 
                            center={isUsingGps ? [userCoords.latitude, userCoords.longitude] : [23.0225, 72.5714]} 
-                           markers={[{ position: isUsingGps ? [userCoords.latitude, userCoords.longitude] : [23.0225, 72.5714], color: 'danger', label: '🏠' }]} 
+                           markers={[{ position: isUsingGps ? [userCoords.latitude, userCoords.longitude] : [23.0225, 72.5714], color: 'red-500', label: '🏠' }]} 
                            height="100%" 
                            zoom={16} 
                          />
@@ -730,26 +786,54 @@ const App = () => {
                 <h2 className="text-7xl font-black tracking-tighter text-white">ORDER <br/><span className="text-[#ff2d2d]">VAULT.</span></h2>
                 <Badge color="ghost">ENCRYPTED HISTORY</Badge>
              </div>
-             {orders.map(o => (
-                <GlassCard key={o.id} className="p-12 group border-white/20 hover:border-[#ff2d2d]/60 transition-all duration-700 bg-[#0f0f0f]">
-                    <div className="flex justify-between items-center">
-                        <div className="flex gap-10 items-center">
-                        <div className="w-24 h-24 rounded-[2rem] bg-white/10 flex items-center justify-center border-2 border-white/10 group-hover:bg-[#ff2d2d]/20 transition-colors shadow-lg">
-                            <PackageIcon className="w-12 h-12 text-white/50 group-hover:text-[#ff2d2d]" />
+             {orders.map(o => {
+                const tracking = getOrderTrackingData(o);
+                return (
+                  <GlassCard key={o.id} className={`p-0 overflow-hidden group border-white/20 hover:border-[#ff2d2d]/60 transition-all duration-700 bg-[#0f0f0f] ${tracking.isActive ? 'ring-2 ring-red-500/30' : ''}`}>
+                      <div className="p-12 flex justify-between items-center">
+                          <div className="flex gap-10 items-center">
+                            <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center border-2 border-white/10 transition-colors shadow-lg ${tracking.isActive ? 'bg-[#ff2d2d]/20 border-[#ff2d2d]/40' : 'bg-white/10 group-hover:bg-[#ff2d2d]/20'}`}>
+                                <PackageIcon className={`w-12 h-12 transition-colors ${tracking.isActive ? 'text-[#ff2d2d]' : 'text-white/50 group-hover:text-[#ff2d2d]'}`} />
+                            </div>
+                            <div>
+                                <p className="text-[#ff2d2d] font-black text-sm uppercase tracking-widest mb-1">NODE-#{o.id}</p>
+                                <h5 className="text-5xl font-black text-white tracking-tighter leading-none">{o.items?.[0]?.restaurantName || 'Gourmet Engagement'}</h5>
+                                <div className="mt-4 flex items-center gap-4">
+                                  <Badge color={o.status === 'delivered' ? 'gold' : 'primary'} pulse={tracking.isActive}>
+                                    {o.status.replace('_', ' ')}
+                                  </Badge>
+                                  {tracking.isActive && <span className="text-[10px] font-black text-red-500 uppercase tracking-widest animate-pulse">LIVE TRACKING ACTIVE</span>}
+                                </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-5xl font-black text-white tracking-tighter leading-none mb-3">₹{o.total}</p>
+                            <p className="text-xs text-white/60 font-black uppercase tracking-[0.2em]">{new Date(o.timestamp).toLocaleDateString()}</p>
+                          </div>
+                      </div>
+                      
+                      {tracking.isActive && (
+                        <div className="h-[400px] border-t border-white/10 relative">
+                           <InteractiveMap 
+                              center={tracking.courierPos} 
+                              markers={[
+                                { position: tracking.restCoords, color: 'white/10', label: '🏪' },
+                                { position: tracking.userPos, color: 'white/10', label: '🏠' },
+                                { position: tracking.courierPos, color: 'red-500', label: '🚲', pulse: true }
+                              ]}
+                              polyline={[tracking.restCoords, tracking.courierPos, tracking.userPos]}
+                              height="400px"
+                              zoom={16}
+                           />
+                           <div className="absolute top-6 left-6 right-6 flex justify-between pointer-events-none">
+                              <Badge color="ghost">FLeet Dispatch: Active</Badge>
+                              <Badge color="primary">ETA: 12 MINS</Badge>
+                           </div>
                         </div>
-                        <div>
-                            <p className="text-[#ff2d2d] font-black text-sm uppercase tracking-widest mb-1">NODE-#{o.id}</p>
-                            <h5 className="text-5xl font-black text-white tracking-tighter leading-none">{o.items?.[0]?.restaurantName || 'Gourmet Engagement'}</h5>
-                            <div className="mt-4"><Badge color={o.status === 'delivered' ? 'gold' : 'primary'}>{o.status.replace('_', ' ')}</Badge></div>
-                        </div>
-                        </div>
-                        <div className="text-right">
-                        <p className="text-5xl font-black text-white tracking-tighter leading-none mb-3">₹{o.total}</p>
-                        <p className="text-xs text-white/60 font-black uppercase tracking-[0.2em]">{new Date(o.timestamp).toLocaleDateString()}</p>
-                        </div>
-                    </div>
-                </GlassCard>
-             ))}
+                      )}
+                  </GlassCard>
+                );
+             })}
           </div>
         )}
 

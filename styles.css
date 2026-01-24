@@ -3,7 +3,7 @@
     --primary: #ff2d2d;
     --bg-dark: #050505;
     --card-dark: #111111;
-    --border-white: rgba(255, 255, 255, 0.12); /* Increased from 0.05 */
+    --border-white: rgba(255, 255, 255, 0.12);
     --accent-gold: #ffc107;
     --text-main: #f8f8f8;
     --text-secondary: rgba(255, 255, 255, 0.75);
@@ -30,14 +30,14 @@ html { scroll-behavior: smooth; }
 
 /* Cinematic Elements */
 .glass-panel {
-    background: rgba(15, 15, 15, 0.85); /* Slightly more opaque */
+    background: rgba(15, 15, 15, 0.85); 
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
     border: 1px solid var(--border-white);
 }
 
 .glass-card {
-    background: rgba(255, 255, 255, 0.05); /* Increased from 0.02 */
+    background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(15px);
     border: 1px solid var(--border-white);
     transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -49,7 +49,7 @@ html { scroll-behavior: smooth; }
     box-shadow: 0 20px 40px rgba(0,0,0,0.4);
 }
 
-/* Spring Animations */
+/* Animations */
 @keyframes reveal {
   from { opacity: 0; transform: translateY(30px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -62,11 +62,19 @@ html { scroll-behavior: smooth; }
 }
 .animate-glow { animation: pulse-glow 3s infinite; }
 
+@keyframes ping-slow {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.animate-ping-slow {
+  animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Map Overrides */
-.leaflet-container { background: #080808 !important; }
+.leaflet-container { background: #080808 !important; border: none !important; }
 .leaflet-tile { filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(110%); }
 
 .bento-grid {
@@ -97,4 +105,9 @@ html { scroll-behavior: smooth; }
     transform: scale(1.03);
     box-shadow: 0 15px 45px rgba(255, 45, 45, 0.5);
     filter: brightness(1.1);
+}
+
+.custom-div-icon {
+  background: transparent;
+  border: none;
 }
